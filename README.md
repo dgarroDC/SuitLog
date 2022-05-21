@@ -4,7 +4,7 @@
 
 Tired of having to go to the ship again and again just to check any data in the Ship Log? Not anymore! With Suit Log you just need to **suit up**, go out to have your adventures without annoying interruptions and check the data you want at any time!
 
-You don't have to learn anything to use this new interface, the controls are the same as in the Ship Log! Just use the autopilot key to open it (**X key** in the gamepad or **up D-pad button** in the gamepad by default).  You'll have everything you need right there: entries with their photos, "icons", marking location in HUD...
+You don't have to learn anything to use this new interface, the controls are the same as in the Ship Log! Just use the autopilot key to open it (**X key** in the keyboard or **up D-pad button** in the gamepad by default).  You'll have everything you need right there: entries with their photos, "icons", marking location in HUD...
 
 And all of this displayed in a diegetic interface that shares design with the other HUD elements displayed on the helmet, intended to feel like a vanilla feature and not an external add-on!
 
@@ -21,4 +21,4 @@ Please, I'd be happy to receive any suggestions and bug reports on [GitHub](http
 ## Compatibility and interactions with other mods
 
 * [Ship Log Slide Reel Player](https://outerwildsmods.com/mods/shiplogslidereelplayer/): The Suit Log doesn't display the reels, but the mods are compatible: you should be able to run the game with both mods enabled without issues but you would need to use the Ship Log to view the reels (a future update could integrate that feature to the Suit Log)
-* [Archaeologist Achievement Helper](https://outerwildsmods.com/mods/archaeologistachievementhelper/): The mods are compatible and if you run the game with Suit Log and this helper mod, the later would add the *"There's more to explore here."* mark and text to entries to both the Ship Log and Suit Log. However, the *"Show all missing facts"* optional feature only applies to the Ship Logs and the Suit Log would be unaffected by this. TODO: VERIFY THIS
+* [Archaeologist Achievement Helper](https://outerwildsmods.com/mods/archaeologistachievementhelper/): The mods are compatible and if you run the game with Suit Log and this helper mod, the later would add the *"There's more to explore here."* mark and text to entries to both the Ship Log and Suit Log. However, the *"Show all missing facts"* optional feature only applies to the Ship Logs and the Suit Log would be unaffected by this.
