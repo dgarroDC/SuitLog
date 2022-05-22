@@ -4,6 +4,8 @@
 
 Tired of having to go to the ship again and again just to check any data in the Ship Log? Not anymore! With Suit Log you just need to **suit up**, go out to have your adventures without annoying interruptions and check the data you want at any time!
 
+Demo video: https://www.youtube.com/watch?v=Xpf7Rwy12Bk
+
 You don't have to learn anything to use this new interface, the controls are the same as in the Ship Log! Just use the autopilot key to open it (**X key** in the gamepad or **up D-pad button** in the gamepad by default).  You'll have everything you need right there: entries with their photos, "icons", marking location in HUD...
 
 And all of this displayed in a diegetic interface that shares design with the other HUD elements displayed on the helmet, intended to feel like a vanilla feature and not an external add-on!
