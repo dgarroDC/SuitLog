@@ -60,7 +60,6 @@ namespace SuitLog
                 _items[i] = item;
             }
 
-            descFieldObject.AddComponent<CanvasGroup>();
             _animator = descFieldObject.AddComponent<CanvasGroupAnimator>();
             _closeScale = new Vector3(1f, 0f, 1f);
             _animator.SetImmediate(0f, new Vector3(1f, 0f, 1f)); // Start closed

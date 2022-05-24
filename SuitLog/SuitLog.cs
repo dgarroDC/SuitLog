@@ -41,7 +41,8 @@ namespace SuitLog
         private ScreenPrompt _closeEntriesPrompt;
         private ScreenPrompt _markOnHUDPrompt;
 
-        private CanvasGroupAnimator _animator;
+        private CanvasGroupAnimator _suitLogAnimator;
+        private CanvasGroupAnimator _notificationsAnimator;
         internal const float OpenAnimationDuration = 0.13f;
         internal const float CloseAnimationDuration = 0.3f;
 
@@ -206,7 +207,9 @@ namespace SuitLog
             
             OWInput.ChangeInputMode(InputMode.None);
             _open = true;
-            _animator.AnimateTo(1, Vector3.one, OpenAnimationDuration);
+            _suitLogAnimator.AnimateTo(1, Vector3.one, OpenAnimationDuration);
+            // Make notifications slightly transparent to avoid unreadable overlapping
+            _notificationsAnimator.AnimateTo(0.35f, Vector3.one, OpenAnimationDuration);
             PlayOneShot(AudioType.ShipLogSelectPlanet);
         }
  
@@ -218,7 +221,8 @@ namespace SuitLog
             }
             OWInput.RestorePreviousInputs(); // This should always be Character
             _open = false;
-            _animator.AnimateTo(0, Vector3.one, CloseAnimationDuration);
+            _suitLogAnimator.AnimateTo(0, Vector3.one, CloseAnimationDuration);
+            _notificationsAnimator.AnimateTo(1, Vector3.one, CloseAnimationDuration);
             PlayOneShot(AudioType.ShipLogDeselectPlanet);
         }
 
@@ -341,7 +345,6 @@ namespace SuitLog
             }
 
             _titleText.text = "Suit Log";
-            // TODO: 0.35 alpha on notifications when suit log is open
         }
 
         private void LoadEntriesMenu()
@@ -529,9 +532,10 @@ namespace SuitLog
                 _textList[i] = text;
             }
             
-            _suitLog.AddComponent<CanvasGroup>();
-            _animator = _suitLog.AddComponent<CanvasGroupAnimator>();
-            _animator.SetImmediate(0f, Vector3.one); // Start closed (_open = closed)
+            _suitLogAnimator = _suitLog.AddComponent<CanvasGroupAnimator>();
+            _suitLogAnimator.SetImmediate(0f, Vector3.one); // Start closed (_open = closed)
+
+            _notificationsAnimator = canvas.transform.Find("Notifications/Mask/LayoutGroup").gameObject.AddComponent<CanvasGroupAnimator>();
         }
 
         internal static void SetParent(Transform child, Transform parent)
