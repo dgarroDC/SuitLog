@@ -77,11 +77,14 @@ namespace SuitLog
             _topRightPrompts = Locator.GetPromptManager().GetScreenPromptList(PromptPosition.UpperRight).GetComponent<RectTransform>();
 
             _shipLogAstroObjects = new Dictionary<string, ShipLogAstroObject>();
-            ShipLogAstroObject[] shipLogAstroObjects = Resources.FindObjectsOfTypeAll<ShipLogAstroObject>();
-            foreach (ShipLogAstroObject astroObject in shipLogAstroObjects)
+            ShipLogMapMode mapMode = Resources.FindObjectsOfTypeAll<ShipLogMapMode>()[0];
+            foreach (ShipLogAstroObject[] astroObjects in mapMode._astroObjects)
             {
-                // We want to use the ShipLogAstroObject to use the GetName patched by New Horizons...
-                _shipLogAstroObjects.Add(astroObject.GetID(), astroObject);
+                foreach (ShipLogAstroObject astroObject in astroObjects)
+                {
+                    // We want to use the ShipLogAstroObject to use the GetName patched by New Horizons...
+                    _shipLogAstroObjects.Add(astroObject.GetID(), astroObject);
+                }
             }
             _shipLogEntries = _shipLogManager._entryDict;
             _astroObjectIds = new HashSet<string>();
@@ -101,7 +104,7 @@ namespace SuitLog
             SetParent(audioSourceObject.transform, _suitLog.transform);
             _audioSource = audioSourceObject.GetComponent<OWAudioSource>();
 
-            _selectedAstroObjectID = "TIMBER_HEARTH"; // Same as ship log computer
+            _selectedAstroObjectID = mapMode._startingAstroObjectID; // Same as ship log computer, also match New Horizons if changed by it
             _open = false;
             _isEntryMenuOpen = false;
             _setupDone = true;
@@ -324,7 +327,6 @@ namespace SuitLog
                 if (state != ShipLogEntry.State.Explored && state != ShipLogEntry.State.Rumored) continue;
                 if (astroObject.GetID() == _selectedAstroObjectID)
                 {
-                    // In New Horizons if no Timer Hearth, _seletedItem would remain 0 on first open, no problem
                     _selectedItem = _items.Count; // Next element to insert
                 }
                 _items.Add(new ListItem(
