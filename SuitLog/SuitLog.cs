@@ -221,13 +221,23 @@ namespace SuitLog
         private void OpenSuitLog()
         {
             LoadAstroObjectsMenu();
-            
-            OWInput.ChangeInputMode(InputMode.None);
-            _open = true;
-            _suitLogAnimator.AnimateTo(1, Vector3.one, OpenAnimationDuration);
-            // Make notifications slightly transparent to avoid unreadable overlapping
-            _notificationsAnimator.AnimateTo(0.35f, Vector3.one, OpenAnimationDuration);
-            PlayOneShot(AudioType.ShipLogSelectPlanet);
+
+            if (_items.Count > 0)
+            {
+                OWInput.ChangeInputMode(InputMode.None);
+                _open = true;
+                _suitLogAnimator.AnimateTo(1, Vector3.one, OpenAnimationDuration);
+                // Make notifications slightly transparent to avoid unreadable overlapping
+                _notificationsAnimator.AnimateTo(0.35f, Vector3.one, OpenAnimationDuration);
+                PlayOneShot(AudioType.ShipLogSelectPlanet);
+            }
+            else
+            {
+                // TODO: Translation
+                // This case shouldn't be possible in vanilla because the fact TH_VILLAGE_X1 is always revealed, this was added for New Horizons
+                NotificationData notification = new NotificationData(NotificationTarget.Player, "SUIT LOG IS EMPTY");
+                NotificationManager.SharedInstance.PostNotification(notification);
+            }
         }
  
         private void CloseSuitLog()
