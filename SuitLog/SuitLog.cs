@@ -52,8 +52,8 @@ namespace SuitLog
         {
             _instance = this;
             ModHelper.HarmonyHelper.AddPrefix<BaseInputManager>("ChangeInputMode", typeof(SuitLog), nameof(ChangeInputModePrefixPatch));
-            // Setup after ShipLogMapMode.Initialize to find all ShipLogAstroObject added by New Horizons
-            ModHelper.HarmonyHelper.AddPostfix<ShipLogMapMode>("Initialize", typeof(SuitLog), nameof(SetupPatch));
+            // Setup after ShipLogController.LateInitialize to find all ShipLogAstroObject added by New Horizons in ShipLogMapMode.Initialize postfix
+            ModHelper.HarmonyHelper.AddPostfix<ShipLogController>("LateInitialize", typeof(SuitLog), nameof(SetupPatch));
             LoadManager.OnCompleteSceneLoad += OnCompleteSceneLoad;
         }
 
