@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using OWML.Common;
 using OWML.ModHelper;
 using UnityEngine;
@@ -26,6 +27,7 @@ namespace SuitLog
         private RectTransform _topRightPrompts;
 
         private Dictionary<string,ShipLogEntry> _shipLogEntries;
+        private Dictionary<string,ShipLogAstroObject> _shipLogAstroObjects;
         private HashSet<string> _astroObjectIds;
 
         private const int ListSize = 10;
@@ -45,6 +47,12 @@ namespace SuitLog
         private CanvasGroupAnimator _notificationsAnimator;
         internal const float OpenAnimationDuration = 0.13f;
         internal const float CloseAnimationDuration = 0.3f;
+        
+        // I hate this, but it seems necessary for New Horizons
+        private int _currentSetupTrie;
+        private const int InitialFramesToWait = 15;
+        private const int FramesToWaitBetweenTries = 3;
+        private const int MaxTries = 1000;
 
         private void Start()
         {
@@ -58,23 +66,51 @@ namespace SuitLog
            _setupDone = false;
            if (loadScene == OWScene.SolarSystem)
            {
-               ModHelper.Events.Unity.FireOnNextUpdate(Setup);
+               _currentSetupTrie = 0;
+               ModHelper.Events.Unity.FireInNUpdates(Setup, InitialFramesToWait);
            }
         }
 
         private void Setup()
         {
+            _currentSetupTrie++;
+            
             _toolModeSwapper = Locator.GetToolModeSwapper();
             _shipLogManager = Locator.GetShipLogManager();
             _entryHUDMarker = FindObjectOfType<ShipLogEntryHUDMarker>();
             _photo = GameObject.Find("PlayerHUD/HelmetOnUI/UICanvas/HUDProbeDisplay/Image").GetComponent<Image>();
             _topRightPrompts = Locator.GetPromptManager().GetScreenPromptList(PromptPosition.UpperRight).GetComponent<RectTransform>();
 
+            _shipLogAstroObjects = new Dictionary<string, ShipLogAstroObject>();
+            ShipLogAstroObject[] shipLogAstroObjects = Resources.FindObjectsOfTypeAll<ShipLogAstroObject>();
+            foreach (ShipLogAstroObject astroObject in shipLogAstroObjects)
+            {
+                // We want to use the ShipLogAstroObject to use the GetName patched by New Horizons...
+                _shipLogAstroObjects.Add(astroObject.GetID(), astroObject);
+            }
             _shipLogEntries = _shipLogManager._entryDict;
             _astroObjectIds = new HashSet<string>();
             foreach (ShipLogEntry entry in _shipLogEntries.Values)
             {
+                // We only want to show these astro objects, also iterating this gives a nice order in stock planets (?
                 _astroObjectIds.Add(entry.GetAstroObjectID());
+            }
+            // Copy to remove missing items, we do this because New Horizons could add ShipLogAstroObject later I guess
+            foreach (string astroObjectId in new HashSet<string>(_astroObjectIds))
+            {
+                if (!_shipLogAstroObjects.ContainsKey(astroObjectId))
+                {
+                    ModHelper.Console.WriteLine("No ShipLogAstroObject found with ID: " + astroObjectId +
+                                                " (in Setup trie " + _currentSetupTrie + ")", MessageType.Warning);
+                    if (_currentSetupTrie < MaxTries)
+                    {
+                        ModHelper.Events.Unity.FireInNUpdates(Setup, FramesToWaitBetweenTries);
+                        return;
+                    }
+                    ModHelper.Console.WriteLine("Ignoring missing ShipLogAstroObject, max Setup tries reached!" +
+                                                " It won't show in Suit Log :(", MessageType.Error);
+                    _astroObjectIds.Remove(astroObjectId);
+                }
             }
 
             SetupUI();
@@ -297,48 +333,28 @@ namespace SuitLog
             }
         }
 
-        private static string GetAstroObjectName(string astroObjectId)
-        {
-            return AstroObject.AstroObjectNameToString(AstroObject.StringIDToAstroObjectName(astroObjectId));
-        }
-
         private void LoadAstroObjectsMenu()
         {
             _items.Clear();
+            _selectedItem = 0;
             foreach (string astroObjectId in _astroObjectIds)
             {
-                List<ShipLogEntry> entries = _shipLogManager.GetEntriesByAstroBody(astroObjectId);
-                // See ShipLogAstroObject.UpdateState() 
-                bool unread = false;
-                ShipLogEntry.State state = ShipLogEntry.State.Hidden;
-                foreach (ShipLogEntry entry in entries)
-                {
-                    if (entry.HasUnreadFacts())
-                    {
-                        unread = true;
-                    }
-                    if (entry.GetState() == ShipLogEntry.State.Explored)
-                    {
-                        state = ShipLogEntry.State.Explored;
-                    }
-                    else if (state != ShipLogEntry.State.Explored && entry.GetState() == ShipLogEntry.State.Rumored)
-                    {
-                        state = ShipLogEntry.State.Rumored;
-                    }
-                }
-
+                ShipLogAstroObject astroObject = _shipLogAstroObjects[astroObjectId];
+                astroObject.OnEnterComputer();
+                astroObject.UpdateState();
+                ShipLogEntry.State state = astroObject.GetState(); 
                 if (state != ShipLogEntry.State.Explored && state != ShipLogEntry.State.Rumored) continue;
-                string astroObjectName = GetAstroObjectName(astroObjectId);
-                if (astroObjectId == _selectedAstroObjectID)
+                if (astroObject.GetID() == _selectedAstroObjectID)
                 {
+                    // In New Horizons if no Timer Hearth, _seletedItem would remain 0 on first open, no problem
                     _selectedItem = _items.Count; // Next element to insert
                 }
                 _items.Add(new ListItem(
                     astroObjectId,
-                    astroObjectName,
+                    astroObject.GetName(),
                     state == ShipLogEntry.State.Rumored,
                     false,
-                    unread,
+                    astroObject._unviewedObj.activeSelf,
                     false,
                     false
                 ));
@@ -349,9 +365,13 @@ namespace SuitLog
 
         private void LoadEntriesMenu()
         {
-            ListItem selectedAstroObject = _items[_selectedItem];
+            _selectedItem = 0;
             _items.Clear();
-            List<ShipLogEntry> entries = _shipLogManager.GetEntriesByAstroBody(selectedAstroObject.id);
+            ShipLogAstroObject selectedAstroObject = _shipLogAstroObjects[_selectedAstroObjectID];
+            // Just in case the log was updated...
+            selectedAstroObject.OnEnterComputer();
+            // Don't use GetEntries, patched by ShipLogSlideReelPlayer
+            List<ShipLogEntry> entries = selectedAstroObject._entries;
             foreach (ShipLogEntry entry in entries)
             {
                 if (entry.GetState() == ShipLogEntry.State.Explored || entry.GetState() == ShipLogEntry.State.Rumored)
@@ -368,8 +388,7 @@ namespace SuitLog
                 }
             }
 
-            _selectedItem = 0;
-            _titleText.text = GetAstroObjectName(_selectedAstroObjectID);
+            _titleText.text = selectedAstroObject.GetName();
         }
 
         private bool IsSuitLogOpenable()
