@@ -47,34 +47,29 @@ namespace SuitLog
         private CanvasGroupAnimator _notificationsAnimator;
         internal const float OpenAnimationDuration = 0.13f;
         internal const float CloseAnimationDuration = 0.3f;
-        
-        // I hate this, but it seems necessary for New Horizons
-        private int _currentSetupTrie;
-        private const int InitialFramesToWait = 15;
-        private const int FramesToWaitBetweenTries = 3;
-        private const int MaxTries = 1000;
 
         private void Start()
         {
             _instance = this;
             ModHelper.HarmonyHelper.AddPrefix<BaseInputManager>("ChangeInputMode", typeof(SuitLog), nameof(ChangeInputModePrefixPatch));
+            // Setup after ShipLogMapMode.Initialize to find all ShipLogAstroObject added by New Horizons
+            ModHelper.HarmonyHelper.AddPostfix<ShipLogMapMode>("Initialize", typeof(SuitLog), nameof(SetupPatch));
             LoadManager.OnCompleteSceneLoad += OnCompleteSceneLoad;
         }
 
         private void OnCompleteSceneLoad(OWScene scene, OWScene loadScene)
         {
+            // This should be called before SetupPatch
            _setupDone = false;
-           if (loadScene == OWScene.SolarSystem)
-           {
-               _currentSetupTrie = 0;
-               ModHelper.Events.Unity.FireInNUpdates(Setup, InitialFramesToWait);
-           }
+        }
+
+        private static void SetupPatch()
+        {
+            _instance.Setup();
         }
 
         private void Setup()
         {
-            _currentSetupTrie++;
-            
             _toolModeSwapper = Locator.GetToolModeSwapper();
             _shipLogManager = Locator.GetShipLogManager();
             _entryHUDMarker = FindObjectOfType<ShipLogEntryHUDMarker>();
@@ -94,23 +89,6 @@ namespace SuitLog
             {
                 // We only want to show these astro objects, also iterating this gives a nice order in stock planets (?
                 _astroObjectIds.Add(entry.GetAstroObjectID());
-            }
-            // Copy to remove missing items, we do this because New Horizons could add ShipLogAstroObject later I guess
-            foreach (string astroObjectId in new HashSet<string>(_astroObjectIds))
-            {
-                if (!_shipLogAstroObjects.ContainsKey(astroObjectId))
-                {
-                    ModHelper.Console.WriteLine("No ShipLogAstroObject found with ID: " + astroObjectId +
-                                                " (in Setup trie " + _currentSetupTrie + ")", MessageType.Warning);
-                    if (_currentSetupTrie < MaxTries)
-                    {
-                        ModHelper.Events.Unity.FireInNUpdates(Setup, FramesToWaitBetweenTries);
-                        return;
-                    }
-                    ModHelper.Console.WriteLine("Ignoring missing ShipLogAstroObject, max Setup tries reached!" +
-                                                " It won't show in Suit Log :(", MessageType.Error);
-                    _astroObjectIds.Remove(astroObjectId);
-                }
             }
 
             SetupUI();
