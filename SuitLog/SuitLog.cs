@@ -104,7 +104,9 @@ namespace SuitLog
             SetParent(audioSourceObject.transform, _suitLog.transform);
             _audioSource = audioSourceObject.GetComponent<OWAudioSource>();
 
-            _selectedAstroObjectID = mapMode._startingAstroObjectID; // Same as ship log computer, also match New Horizons if changed by it
+            // Don't use the one of the map mode because with New Horizons it could be an astro object not present
+            // in the Suit Log (in vanilla is Timber Hearth that is always there), just select the first item...
+            _selectedAstroObjectID = null; 
             _open = false;
             _isEntryMenuOpen = false;
             _setupDone = true;
@@ -327,7 +329,7 @@ namespace SuitLog
         private void LoadAstroObjectsMenu()
         {
             _items.Clear();
-            _selectedItem = 0;
+            _selectedItem = 0; // Unnecessary statement probably...
             foreach (string astroObjectId in _astroObjectIds)
             {
                 ShipLogAstroObject astroObject = _shipLogAstroObjects[astroObjectId];
@@ -335,7 +337,12 @@ namespace SuitLog
                 astroObject.UpdateState();
                 ShipLogEntry.State state = astroObject.GetState(); 
                 if (state != ShipLogEntry.State.Explored && state != ShipLogEntry.State.Rumored) continue;
-                if (astroObject.GetID() == _selectedAstroObjectID)
+                if (_selectedAstroObjectID == null)
+                {
+                    // This will make the first item to be selected the first time
+                    _selectedAstroObjectID = astroObjectId;
+                }
+                if (astroObjectId == _selectedAstroObjectID)
                 {
                     _selectedItem = _items.Count; // Next element to insert
                 }
@@ -562,7 +569,7 @@ namespace SuitLog
             Destroy(textObject.GetComponent<LocalizedText>());
             textObject.name = "Text";
             Text text = textObject.GetComponent<Text>();
-            text.text = "NEW TEXT";
+            text.text = "If you're reading this, this is a bug, please report it!";
             text.alignment = TextAnchor.UpperLeft;
             text.fontSize = 26;
             text.gameObject.SetActive(false);
