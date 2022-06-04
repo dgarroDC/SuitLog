@@ -175,6 +175,7 @@ namespace SuitLog
             if (entry.HasMoreToExplore())
             {
                 _items[_displayCount].DisplayText("- " + UITextLibrary.GetString(UITextType.ShipLogMoreThere));
+                _displayCount++;
             }
         }
 
@@ -203,7 +204,7 @@ namespace SuitLog
 
         private float GetListBottomPos()
         {
-            if (_displayCount <= 0) return 0f; // Is this case possible?
+            if (_displayCount <= 0) return 0f; // Is this case possible? Maybe because of other mods
             ShipLogFactListItem lastItem = _items[_displayCount - 1];
             return lastItem.GetPosition().y - lastItem.GetHeight();
         }
