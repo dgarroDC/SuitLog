@@ -106,25 +106,8 @@ namespace SuitLog
             SetParent(audioSourceObject.transform, _suitLog.transform);
             _audioSource = audioSourceObject.GetComponent<OWAudioSource>();
 
-            string reelPlayerUniqueName = "dgarro.ShipLogSlideReelPlayer";
-            try
-            {
-                _reelPlayerAPI = ModHelper.Interaction.GetModApi<IReelPlayerAPI>(reelPlayerUniqueName);
-            }
-            catch (Exception)
-            {
-                    // Ignore
-            }
-            if (_reelPlayerAPI == null && ModHelper.Interaction.ModExists(reelPlayerUniqueName))
-            {
-                IModManifest reelPlayerManifest = ModHelper.Interaction.GetMod(reelPlayerUniqueName).ModHelper.Manifest;
-                ModHelper.Console.WriteLine($"{reelPlayerManifest.Name} is installed with an unsupported version {reelPlayerManifest.Version}, " +
-                                            $"please update or disable it", MessageType.Error);
-            }
-            
-            _reelPlayerAPI?.AddProjector(_photo.gameObject, prompt => Locator.GetPromptManager().AddScreenPrompt(prompt, PromptPosition.UpperRight));
+            SetupReelPlayer();
 
-            
             // Don't use the one of the map mode because with New Horizons it could be an astro object not present
             // in the Suit Log (in vanilla is Timber Hearth that is always there), just select the first item...
             _selectedAstroObjectID = null; 
@@ -454,6 +437,20 @@ namespace SuitLog
         private bool CanEntryBeMarkedOnHUD(ShipLogEntry entry)
         {
             return entry.GetState() == ShipLogEntry.State.Explored && Locator.GetEntryLocation(entry.GetID()) != null;
+        }
+        
+        private void SetupReelPlayer()
+        {
+            string reelPlayerUniqueName = "dgarro.ShipLogSlideReelPlayer";
+            _reelPlayerAPI = ModHelper.Interaction.TryGetModApi<IReelPlayerAPI>(reelPlayerUniqueName);
+            if (_reelPlayerAPI == default && ModHelper.Interaction.ModExists(reelPlayerUniqueName))
+            {
+                IModManifest reelPlayerManifest = ModHelper.Interaction.TryGetMod(reelPlayerUniqueName).ModHelper.Manifest;
+                ModHelper.Console.WriteLine(
+                    $"{reelPlayerManifest.Name} is installed with an unsupported version {reelPlayerManifest.Version}, " +
+                    $"please update or disable it", MessageType.Error);
+            }
+            _reelPlayerAPI?.AddProjector(_photo.gameObject, prompt => Locator.GetPromptManager().AddScreenPrompt(prompt, PromptPosition.UpperRight));
         }
 
         private void SetupPrompts()
