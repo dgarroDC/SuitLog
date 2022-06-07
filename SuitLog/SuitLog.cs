@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using OWML.Common;
 using OWML.ModHelper;
+using ShipLogSlideReelPlayer;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,7 +15,7 @@ namespace SuitLog
         private bool _enabled;
         private bool _setupDone;
         private bool _open;
-        private bool _isEntryMenuOpen;
+        private bool _isEntryMenuOpen; // <=> _entryItems not empty
         private GameObject _suitLog;
         private OWAudioSource _audioSource;
         private DescriptionField _descField;
@@ -26,13 +27,13 @@ namespace SuitLog
         private Image _photo;
         private RectTransform _topRightPrompts;
 
-        private Dictionary<string,ShipLogEntry> _shipLogEntries;
         private Dictionary<string,ShipLogAstroObject> _shipLogAstroObjects;
         private HashSet<string> _astroObjectIds;
 
         private const int ListSize = 10;
         private Text[] _textList;
         private List<ListItem> _items = new();
+        private List<ShipLogEntry> _entryItems = new();
         private int _selectedItem;
         private string _selectedAstroObjectID;
         private Text _titleText;
@@ -47,6 +48,8 @@ namespace SuitLog
         private CanvasGroupAnimator _notificationsAnimator;
         internal const float OpenAnimationDuration = 0.13f;
         internal const float CloseAnimationDuration = 0.3f;
+
+        private IReelPlayerAPI _reelPlayerAPI;
 
         private void Start()
         {
@@ -86,9 +89,8 @@ namespace SuitLog
                     _shipLogAstroObjects.Add(astroObject.GetID(), astroObject);
                 }
             }
-            _shipLogEntries = _shipLogManager._entryDict;
             _astroObjectIds = new HashSet<string>();
-            foreach (ShipLogEntry entry in _shipLogEntries.Values)
+            foreach (ShipLogEntry entry in _shipLogManager.GetEntryList())
             {
                 // We only want to show these astro objects, also iterating this gives a nice order in stock planets (?
                 _astroObjectIds.Add(entry.GetAstroObjectID());
@@ -104,6 +106,25 @@ namespace SuitLog
             SetParent(audioSourceObject.transform, _suitLog.transform);
             _audioSource = audioSourceObject.GetComponent<OWAudioSource>();
 
+            string reelPlayerUniqueName = "dgarro.ShipLogSlideReelPlayer";
+            try
+            {
+                _reelPlayerAPI = ModHelper.Interaction.GetModApi<IReelPlayerAPI>(reelPlayerUniqueName);
+            }
+            catch (Exception)
+            {
+                    // Ignore
+            }
+            if (_reelPlayerAPI == null && ModHelper.Interaction.ModExists(reelPlayerUniqueName))
+            {
+                IModManifest reelPlayerManifest = ModHelper.Interaction.GetMod(reelPlayerUniqueName).ModHelper.Manifest;
+                ModHelper.Console.WriteLine($"{reelPlayerManifest.Name} is installed with an unsupported version {reelPlayerManifest.Version}, " +
+                                            $"please update or disable it", MessageType.Error);
+            }
+            
+            _reelPlayerAPI?.AddProjector(_photo.gameObject, prompt => Locator.GetPromptManager().AddScreenPrompt(prompt, PromptPosition.UpperRight));
+
+            
             // Don't use the one of the map mode because with New Horizons it could be an astro object not present
             // in the Suit Log (in vanilla is Timber Hearth that is always there), just select the first item...
             _selectedAstroObjectID = null; 
@@ -144,7 +165,7 @@ namespace SuitLog
                 }
                 else if (selectionChange != 0)
                 {
-                    ListItem prevSelectedItem = _items[_selectedItem];
+                    int prevSelectedItem = _selectedItem;
                     _selectedItem += selectionChange;
                     if (_selectedItem == -1)
                     {
@@ -164,13 +185,13 @@ namespace SuitLog
                     else
                     {
                         MarkAsRead(prevSelectedItem);
-                        UpdateSelectedEntry(selectedItemId);
+                        UpdateSelectedEntry();
                     }
                 }
                 else if (_isEntryMenuOpen && Input.IsNewlyPressed(Input.Action.MarkEntryOnHUD))
                 {
                     ListItem item = _items[_selectedItem];
-                    if (CanEntryBeMarkedOnHUD(item.id))
+                    if (CanEntryBeMarkedOnHUD(_entryItems[_selectedItem]))
                     {
                         item.markedOnHUD = !item.markedOnHUD;
                         if (!item.markedOnHUD)
@@ -259,28 +280,32 @@ namespace SuitLog
         {
             LoadEntriesMenu();
             _descField.Open();
-            UpdateSelectedEntry(_items[_selectedItem].id);
+            UpdateSelectedEntry();
             _isEntryMenuOpen = true;
             PlayOneShot(AudioType.ShipLogSelectPlanet);
         }
 
         private void CloseEntryMenu()
         {
-            MarkAsRead(_items[_selectedItem]);
+            MarkAsRead(_selectedItem);
             LoadAstroObjectsMenu();
             _descField.Close();
             HidePhoto();
+            // Important to restore material, otherwise scout photos could be inverted!
+            _reelPlayerAPI?.Close(_photo.gameObject, true);
+            _entryItems.Clear();
             _isEntryMenuOpen = false;
             PlayOneShot(AudioType.ShipLogDeselectPlanet);
         }
  
-        private void UpdateSelectedEntry(string selectedEntryId)
+        private void UpdateSelectedEntry()
         {
-            ShipLogEntry entry = _shipLogEntries[selectedEntryId];
+            ShipLogEntry entry = _entryItems[_selectedItem];
             _descField.SetEntry(entry);
             if (entry.GetState() == ShipLogEntry.State.Explored)
             {
                 ShowPhoto(entry);
+                _reelPlayerAPI?.SelectEntry(_photo.gameObject, i => _entryItems[i], _selectedItem, _items.Count);
             }
             else
             {
@@ -315,12 +340,13 @@ namespace SuitLog
             _audioSource.PlayOneShot(type);
         }
         
-        private void MarkAsRead(ListItem item)
+        private void MarkAsRead(int index)
         {
             // TODO: setting to disable mark on read
+            ListItem item = _items[index];
             if (item.unread)
             {
-                ShipLogEntry entry = _shipLogEntries[item.id];
+                ShipLogEntry entry = _entryItems[index];
                 entry.MarkAsRead();
                 item.unread = false;
             }
@@ -350,7 +376,7 @@ namespace SuitLog
                     astroObjectId,
                     astroObject.GetName(),
                     state == ShipLogEntry.State.Rumored,
-                    false,
+                    0,
                     astroObject._unviewedObj.activeSelf,
                     false,
                     false
@@ -364,11 +390,12 @@ namespace SuitLog
         {
             _selectedItem = 0;
             _items.Clear();
+            _entryItems.Clear();
             ShipLogAstroObject selectedAstroObject = _shipLogAstroObjects[_selectedAstroObjectID];
             // Just in case the log was updated...
             selectedAstroObject.OnEnterComputer();
-            // Don't use GetEntries, patched by ShipLogSlideReelPlayer
-            List<ShipLogEntry> entries = selectedAstroObject._entries;
+            // GetEntries would return reel entries added by ShipLogSlideReelPlayer
+            List<ShipLogEntry> entries = selectedAstroObject.GetEntries();
             foreach (ShipLogEntry entry in entries)
             {
                 if (entry.GetState() == ShipLogEntry.State.Explored || entry.GetState() == ShipLogEntry.State.Rumored)
@@ -377,15 +404,28 @@ namespace SuitLog
                         entry.GetID(),
                         entry.GetName(false),
                         entry.GetState() == ShipLogEntry.State.Rumored,
-                        entry.HasRevealedParent(),
+                        GetEntryIndentation(entry),
                         entry.HasUnreadFacts(),
                         entry.HasMoreToExplore(),
-                        IsEntryMarkedOnHUD(entry.GetID()))
-                    );
+                        IsEntryMarkedOnHUD(entry)
+                    ));
+                    _entryItems.Add(entry);
                 }
             }
 
             _titleText.text = selectedAstroObject.GetName();
+        }
+
+        private int GetEntryIndentation(ShipLogEntry entry)
+        {
+            // This work even for more than one indentation level
+            // (that doesn't happen in vanilla but could happen in mods like ShipLogSlideReelPlayer)
+            // although it requires the parent entry to be returned by id by _shipLogManager
+            if (!entry.HasRevealedParent())
+            {
+                return 0;
+            }
+            return 1 + GetEntryIndentation(_shipLogManager.GetEntry(entry.GetParentID()));
         }
 
         private bool IsSuitLogOpenable()
@@ -406,15 +446,14 @@ namespace SuitLog
                    _toolModeSwapper._firstPersonManipulator._focusedRepairReceiver == null;
         }
 
-        private bool IsEntryMarkedOnHUD(string entryID)
+        private bool IsEntryMarkedOnHUD(ShipLogEntry entry)
         {
-            return entryID.Equals(_entryHUDMarker.GetMarkedEntryID());
+            return entry.GetID().Equals(_entryHUDMarker.GetMarkedEntryID());
         }
 
-        private bool CanEntryBeMarkedOnHUD(string entryID)
+        private bool CanEntryBeMarkedOnHUD(ShipLogEntry entry)
         {
-            ShipLogEntry entry = _shipLogEntries[entryID];
-            return entry.GetState() == ShipLogEntry.State.Explored && Locator.GetEntryLocation(entryID) != null;
+            return entry.GetState() == ShipLogEntry.State.Explored && Locator.GetEntryLocation(entry.GetID()) != null;
         }
 
         private void SetupPrompts()
@@ -442,16 +481,15 @@ namespace SuitLog
             bool showMarkOnHUDPrompt = false;
             if (_open && _isEntryMenuOpen)
             {
-                string entryID = _items[_selectedItem].id;
-                if (CanEntryBeMarkedOnHUD(entryID))
+                ShipLogEntry entry = _entryItems[_selectedItem];
+                if (CanEntryBeMarkedOnHUD(entry))
                 {
                     showMarkOnHUDPrompt = true;
-                    string text = IsEntryMarkedOnHUD(entryID) ? 
+                    string text = IsEntryMarkedOnHUD(entry) ? 
                         UITextLibrary.GetString(UITextType.LogRemoveMarkerPrompt) : 
                         UITextLibrary.GetString(UITextType.LogMarkLocationPrompt);
                     _markOnHUDPrompt.SetText(text);
                 }
-                _markOnHUDPrompt.SetVisibility(_isEntryMenuOpen && CanEntryBeMarkedOnHUD(entryID));
             }
             _markOnHUDPrompt.SetVisibility(showMarkOnHUDPrompt);
             _descField.UpdatePromptsVisibility();
@@ -479,10 +517,7 @@ namespace SuitLog
                 {
                     ListItem item = _items[itemIndex];
                     string displayText = item.text + " "; // Space for the "icons"
-                    if (item.indented)
-                    {
-                        displayText = " " + displayText;
-                    }
+                    displayText = new string(' ', item.indentation) + displayText;
                     if (item.markedOnHUD)
                     {
                         displayText += "<color=#9DFCA9>[V]</color>";
