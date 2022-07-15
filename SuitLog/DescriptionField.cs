@@ -45,19 +45,12 @@ namespace SuitLog
             _origYPos = _factList.anchoredPosition.y;
             VerticalLayoutGroup verticalLayoutGroup = factListObject.AddComponent<VerticalLayoutGroup>();
             verticalLayoutGroup.childForceExpandHeight = false;
+            verticalLayoutGroup.childControlHeight = true;
             
             _items = new ShipLogFactListItem[10];
             for (int i = 0; i < _items.Length; i++)
             {
-                Text text = SuitLog.CreateText();
-                SuitLog.SetParent(text.transform, _factList);
-                text.horizontalOverflow = HorizontalWrapMode.Wrap;
-                text.GetComponent<RectTransform>().pivot = new Vector2(0, 1);
-                ShipLogFactListItem item = text.gameObject.AddComponent<ShipLogFactListItem>();
-                item._text = text;
-                // Set active to avoid NRE on first UpdatePromptsVisibility?
-                item.gameObject.SetActive(true);
-                _items[i] = item;
+                SetupItem(i);
             }
 
             _animator = descFieldObject.AddComponent<CanvasGroupAnimator>();
@@ -70,6 +63,39 @@ namespace SuitLog
             SuitLog.SetParent(audioSourceObject.transform, descFieldObject.transform);
             _audioSource = audioSourceObject.GetComponent<OWAudioSource>();
             _audioSource.SetTrack(OWAudioMixer.TrackName.Player); // Not sure if we need this
+        }
+
+        private void SetupItem(int i)
+        {
+            GameObject itemContainer = new GameObject("ItemContainer_" + i);
+            SuitLog.SetParent(itemContainer.transform, _factList.transform);
+            itemContainer.AddComponent<RectTransform>().pivot = new Vector2(0, 1);
+            HorizontalLayoutGroup horizontalLayoutGroup = itemContainer.AddComponent<HorizontalLayoutGroup>();
+            // idk, this is mostly by trial and error like most layout stuff
+            horizontalLayoutGroup.childForceExpandHeight = false;
+            horizontalLayoutGroup.childControlHeight = true;
+            horizontalLayoutGroup.childForceExpandWidth = false;
+            horizontalLayoutGroup.childControlWidth = true;
+
+            Text hyphen = SuitLog.CreateText();
+            SuitLog.SetParent(hyphen.transform, itemContainer.transform);
+            LayoutElement hyphenLayoutElement = hyphen.gameObject.AddComponent<LayoutElement>();
+            hyphenLayoutElement.minWidth = 26;
+            hyphenLayoutElement.preferredWidth = 26;
+            hyphen.text = "- ";
+
+            Text text = SuitLog.CreateText();
+            SuitLog.SetParent(text.transform, itemContainer.transform);
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+
+            ShipLogFactListItem item = itemContainer.gameObject.AddComponent<ShipLogFactListItem>();
+            item._text = text;
+            _items[i] = item;
+
+            // Set active to avoid NRE on first UpdatePromptsVisibility?
+            itemContainer.SetActive(true);
+            hyphen.gameObject.SetActive(true);
+            text.gameObject.SetActive(true);
         }
 
         public void Update()
@@ -86,10 +112,6 @@ namespace SuitLog
                 if (item.UpdateTextReveal())
                 {
                     revealing = true;
-                }
-                if (item._fact != null)
-                {
-                    item._text.text = "- " + item._text.text;
                 }
             }
 
@@ -174,7 +196,7 @@ namespace SuitLog
 
             if (entry.HasMoreToExplore())
             {
-                _items[_displayCount].DisplayText("- " + UITextLibrary.GetString(UITextType.ShipLogMoreThere));
+                _items[_displayCount].DisplayText(UITextLibrary.GetString(UITextType.ShipLogMoreThere));
                 _displayCount++;
             }
         }
