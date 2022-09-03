@@ -93,7 +93,18 @@ namespace SuitLog
             foreach (ShipLogEntry entry in _shipLogManager.GetEntryList())
             {
                 // We only want to show these astro objects, also iterating this gives a nice order in stock planets (?
-                _astroObjectIds.Add(entry.GetAstroObjectID());
+                string astroObjectID = entry.GetAstroObjectID();
+                if (_shipLogAstroObjects.ContainsKey(astroObjectID))
+                {
+                    _astroObjectIds.Add(astroObjectID); 
+                }
+                else
+                {
+                    ModHelper.Console.WriteLine(
+                        $"Entry {entry.GetID()} has an invalid astro object id {entry.GetAstroObjectID()}, " +
+                        $"this may be an error in a New Horizons addon, please report this error!\n" +
+                        $"The entry won't be shown in the Suit Log", MessageType.Error);
+                }
             }
 
             SetupUI();
