@@ -12,7 +12,7 @@ namespace SuitLog
         private RectTransform _factList;
         private ShipLogFactListItem[] _items;
         private float _origYPos;
-        private int _displayCount = 0;
+        private int _displayCount;
         private bool _visible;
         private CanvasGroupAnimator _animator;
         private Vector3 _closeScale;
@@ -82,7 +82,7 @@ namespace SuitLog
             LayoutElement hyphenLayoutElement = hyphen.gameObject.AddComponent<LayoutElement>();
             hyphenLayoutElement.minWidth = 26;
             hyphenLayoutElement.preferredWidth = 26;
-            hyphen.text = "- ";
+            hyphen.text = "-";
 
             Text text = SuitLog.CreateText();
             SuitLog.SetParent(text.transform, itemContainer.transform);
@@ -178,13 +178,13 @@ namespace SuitLog
         public void SetEntry(ShipLogEntry entry)
         {
             ResetListPos();
+            _displayCount = 0;
             List<ShipLogFact> facts = entry.GetFactsForDisplay();
             for (int i = 0; i < _items.Length; i++)
             {
                 if (i < facts.Count)
                 {
-                    _items[i].DisplayFact(facts[i]);
-                    _items[i].StartTextReveal();
+                    GetNewFactListItemToDisplay().DisplayFact(facts[i]);
                 }
                 else
                 {
@@ -192,12 +192,9 @@ namespace SuitLog
                 }
             }
 
-            _displayCount = facts.Count;
-
             if (entry.HasMoreToExplore())
             {
-                _items[_displayCount].DisplayText(UITextLibrary.GetString(UITextType.ShipLogMoreThere));
-                _displayCount++;
+                GetNewFactListItemToDisplay().DisplayText(UITextLibrary.GetString(UITextType.ShipLogMoreThere));
             }
         }
 
@@ -229,6 +226,11 @@ namespace SuitLog
             if (_displayCount <= 0) return 0f; // Is this case possible? Maybe because of other mods
             ShipLogFactListItem lastItem = _items[_displayCount - 1];
             return lastItem.GetPosition().y - lastItem.GetHeight();
+        }
+
+        public ShipLogFactListItem GetNewFactListItemToDisplay()
+        {
+            return _items[_displayCount++];
         }
     }
 }

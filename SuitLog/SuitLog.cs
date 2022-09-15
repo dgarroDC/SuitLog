@@ -316,7 +316,8 @@ namespace SuitLog
 
         private void HidePhoto()
         {
-            _photo.enabled = false;
+            // TODO: fix blink
+            _photo.enabled = true;
             _photo.sprite = null;
             SetPromptsPosition(0f);
         }
@@ -352,6 +353,11 @@ namespace SuitLog
             _selectedItem = 0; // Unnecessary statement probably...
             foreach (string astroObjectId in _astroObjectIds)
             {
+                if (!_shipLogAstroObjects.ContainsKey(astroObjectId))
+                {
+                    ModHelper.Console.WriteLine("ASTRO OBJECT A="+astroObjectId);
+                    continue;
+                }
                 ShipLogAstroObject astroObject = _shipLogAstroObjects[astroObjectId];
                 astroObject.OnEnterComputer();
                 astroObject.UpdateState();
@@ -462,6 +468,8 @@ namespace SuitLog
                     $"please update or disable it", MessageType.Error);
             }
             _reelPlayerAPI?.AddProjector(_photo.gameObject, prompt => Locator.GetPromptManager().AddScreenPrompt(prompt, PromptPosition.UpperRight));
+            _reelPlayerAPI?.SetDescriptionFieldItemSupplier(_photo.gameObject,
+                () => _descField.GetNewFactListItemToDisplay());
         }
 
         private void SetupPrompts()
