@@ -22,6 +22,5 @@ Please, I'd be happy to receive any suggestions and bug reports on [GitHub](http
 
 ## Compatibility and interactions with other mods
 
-* [Ship Log Slide Reel Player](https://outerwildsmods.com/mods/shiplogslidereelplayer/): This mod is compatible and also integrated to the Suit Log: Having both mods installed gives you the *Suit Log Slide Reel Player*, allowing you to view reels in your Suit Log just like in the Ship Log!
 * [Archaeologist Achievement Helper](https://outerwildsmods.com/mods/archaeologistachievementhelper/): The mods are compatible and if you run the game with Suit Log and this helper mod, the later would add the *"There's more to explore here."* mark and text to entries to both the Ship Log and Suit Log. However, the *"Show all missing facts"* optional feature only applies to the Ship Logs and the Suit Log would be unaffected by this.
 * [New Horizons](https://outerwildsmods.com/mods/newhorizons/): The mods are fully compatible, opening the Suit Log shows planets added by addons of New Horizons if they have entries. The menu list only displays the planets of the current star system (this is the same behaviour that the Ship Log has in New Horizons). Entries added to the vanilla Outer Wilds planets are also listed.
