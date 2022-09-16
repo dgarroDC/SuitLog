@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using OWML.Common;
 using OWML.ModHelper;
-using ShipLogSlideReelPlayer;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -48,8 +46,6 @@ namespace SuitLog
         private CanvasGroupAnimator _notificationsAnimator;
         internal const float OpenAnimationDuration = 0.13f;
         internal const float CloseAnimationDuration = 0.3f;
-
-        private IReelPlayerAPI _reelPlayerAPI;
 
         private void Start()
         {
@@ -116,8 +112,6 @@ namespace SuitLog
             GameObject audioSourceObject = Instantiate(notificationAudio);
             SetParent(audioSourceObject.transform, _suitLog.transform);
             _audioSource = audioSourceObject.GetComponent<OWAudioSource>();
-
-            SetupReelPlayer();
 
             // Don't use the one of the map mode because with New Horizons it could be an astro object not present
             // in the Suit Log (in vanilla is Timber Hearth that is always there), just select the first item...
@@ -285,8 +279,6 @@ namespace SuitLog
             LoadAstroObjectsMenu();
             _descField.Close();
             HidePhoto();
-            // Important to restore material, otherwise scout photos could be inverted!
-            _reelPlayerAPI?.Close(_photo.gameObject, true);
             _entryItems.Clear();
             _isEntryMenuOpen = false;
             PlayOneShot(AudioType.ShipLogDeselectPlanet);
@@ -299,7 +291,6 @@ namespace SuitLog
             if (entry.GetState() == ShipLogEntry.State.Explored)
             {
                 ShowPhoto(entry);
-                _reelPlayerAPI?.SelectEntry(_photo.gameObject, i => _entryItems[i], _selectedItem, _items.Count);
             }
             else
             {
@@ -388,7 +379,7 @@ namespace SuitLog
             ShipLogAstroObject selectedAstroObject = _shipLogAstroObjects[_selectedAstroObjectID];
             // Just in case the log was updated...
             selectedAstroObject.OnEnterComputer();
-            // GetEntries would return reel entries added by ShipLogSlideReelPlayer
+            // GetEntries would return reel entries added by ShipLogSlideReelPlayer, but who cares now
             List<ShipLogEntry> entries = selectedAstroObject.GetEntries();
             foreach (ShipLogEntry entry in entries)
             {
@@ -415,6 +406,7 @@ namespace SuitLog
             // This work even for more than one indentation level
             // (that doesn't happen in vanilla but could happen in mods like ShipLogSlideReelPlayer)
             // although it requires the parent entry to be returned by id by _shipLogManager
+            // ShipLogSlideReelPlayer but I'll leave this just in case another mod adds more levels...
             if (!entry.HasRevealedParent())
             {
                 return 0;
@@ -448,20 +440,6 @@ namespace SuitLog
         private bool CanEntryBeMarkedOnHUD(ShipLogEntry entry)
         {
             return entry.GetState() == ShipLogEntry.State.Explored && Locator.GetEntryLocation(entry.GetID()) != null;
-        }
-        
-        private void SetupReelPlayer()
-        {
-            string reelPlayerUniqueName = "dgarro.ShipLogSlideReelPlayer";
-            _reelPlayerAPI = ModHelper.Interaction.TryGetModApi<IReelPlayerAPI>(reelPlayerUniqueName);
-            if (_reelPlayerAPI == default && ModHelper.Interaction.ModExists(reelPlayerUniqueName))
-            {
-                IModManifest reelPlayerManifest = ModHelper.Interaction.TryGetMod(reelPlayerUniqueName).ModHelper.Manifest;
-                ModHelper.Console.WriteLine(
-                    $"{reelPlayerManifest.Name} is installed with an unsupported version {reelPlayerManifest.Version}, " +
-                    $"please update or disable it", MessageType.Error);
-            }
-            _reelPlayerAPI?.AddProjector(_photo.gameObject, prompt => Locator.GetPromptManager().AddScreenPrompt(prompt, PromptPosition.UpperRight));
         }
 
         private void SetupPrompts()
