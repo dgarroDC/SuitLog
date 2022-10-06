@@ -379,8 +379,8 @@ namespace SuitLog
             ShipLogAstroObject selectedAstroObject = _shipLogAstroObjects[_selectedAstroObjectID];
             // Just in case the log was updated...
             selectedAstroObject.OnEnterComputer();
-            // GetEntries would return reel entries added by ShipLogSlideReelPlayer, but who cares now
-            List<ShipLogEntry> entries = selectedAstroObject.GetEntries();
+            // Don't use GetEntries, patched by ShipLogSlideReelPlayer
+            List<ShipLogEntry> entries = selectedAstroObject._entries;
             foreach (ShipLogEntry entry in entries)
             {
                 if (entry.GetState() == ShipLogEntry.State.Explored || entry.GetState() == ShipLogEntry.State.Rumored)
