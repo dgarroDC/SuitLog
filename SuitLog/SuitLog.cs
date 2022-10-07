@@ -62,12 +62,12 @@ namespace SuitLog
            _setupDone = false;
         }
 
-        private static void SetupPatch()
+        private static void SetupPatch(ShipLogController __instance)
         {
-            _instance.Setup();
+            _instance.Setup(__instance._mapMode as ShipLogMapMode);
         }
 
-        private void Setup()
+        private void Setup(ShipLogMapMode mapMode)
         {
             _toolModeSwapper = Locator.GetToolModeSwapper();
             _shipLogManager = Locator.GetShipLogManager();
@@ -76,7 +76,6 @@ namespace SuitLog
             _topRightPrompts = Locator.GetPromptManager().GetScreenPromptList(PromptPosition.UpperRight).GetComponent<RectTransform>();
 
             _shipLogAstroObjects = new Dictionary<string, ShipLogAstroObject>();
-            ShipLogMapMode mapMode = Resources.FindObjectsOfTypeAll<ShipLogMapMode>()[0];
             foreach (ShipLogAstroObject[] astroObjects in mapMode._astroObjects)
             {
                 foreach (ShipLogAstroObject astroObject in astroObjects)
