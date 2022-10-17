@@ -10,7 +10,6 @@ namespace SuitLog
     {
         private static SuitLog _instance;
 
-        private bool _enabled;
         private bool _setupDone;
         private bool _open;
         private bool _isEntryMenuOpen; // <=> _entryItems not empty
@@ -124,12 +123,12 @@ namespace SuitLog
         {
             if (!_setupDone) return;
             // TODO: Add option to pause when helmet is fully on, but not if end times is playing
-            if (!_enabled && _open && !OWTime.IsPaused())
+            if (_open && !OWTime.IsPaused())
             {
                 // Don't do this on Configure to not mess with the input mode (paused in menu)
                 CloseSuitLog();
             }
-            if (OWTime.IsPaused() || !_enabled)
+            if (OWTime.IsPaused())
             {
                 // Setup is done, we can reference the prompts
                 HideAllPrompts();
@@ -221,11 +220,6 @@ namespace SuitLog
             }
 
             UpdatePromptsVisibility();
-        }
-
-        public override void Configure(IModConfig config)
-        {
-            _enabled = config.Enabled;
         }
 
         private void OpenSuitLog()
