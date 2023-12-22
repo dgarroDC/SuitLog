@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using OWML.Common;
 using OWML.ModHelper;
 using UnityEngine;
@@ -43,12 +45,14 @@ namespace SuitLog
 
         private CanvasGroupAnimator _suitLogAnimator;
         private CanvasGroupAnimator _notificationsAnimator;
+        private static IModConsole _console;
         internal const float OpenAnimationDuration = 0.13f;
         internal const float CloseAnimationDuration = 0.3f;
 
         private void Start()
         {
             _instance = this;
+            _console = ModHelper.Console;
             ModHelper.HarmonyHelper.AddPrefix<BaseInputManager>("ChangeInputMode", typeof(SuitLog), nameof(ChangeInputModePrefixPatch));
             // Setup after ShipLogController.LateInitialize to find all ShipLogAstroObject added by New Horizons in ShipLogMapMode.Initialize postfix
             ModHelper.HarmonyHelper.AddPostfix<ShipLogController>("LateInitialize", typeof(SuitLog), nameof(SetupPatch));
@@ -64,6 +68,24 @@ namespace SuitLog
         private static void SetupPatch(ShipLogController __instance)
         {
             _instance.Setup(__instance._mapMode as ShipLogMapMode);
+
+            var sandLevels = FindObjectsOfType<SandLevelController>().Select(s => s._scaleCurve);
+            string text = "";
+            for (float s = 0f; s <= 22f * 60f; s++)
+            {
+                bool first = true;
+                foreach (AnimationCurve sandLevel in sandLevels) 
+                {
+                    float minutes = s / 60f;
+                    float radius = sandLevel.Evaluate(minutes) * 0.5f;
+                    if (!first) text += ",";
+                    text += radius;
+                    first = false;
+                }
+
+                text += "\n";
+            }
+            File.WriteAllText("C:\\Users\\dgarro\\Desktop\\sand.csv", text);
         }
 
         private void Setup(ShipLogMapMode mapMode)
@@ -439,6 +461,7 @@ namespace SuitLog
         {
             // TODO: Translations
             _openPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.OpenSuitLog), "Open Suit Log");
+          //  _openPrompt.
             _closePrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.CloseSuitLog), "Close Suit Log");
             _viewEntriesPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.ViewEntries), UITextLibrary.GetString(UITextType.LogViewEntriesPrompt));
             _closeEntriesPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.CloseEntries), "Close Entries");
