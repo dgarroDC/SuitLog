@@ -55,7 +55,7 @@ namespace SuitLog
 
             _animator = descFieldObject.AddComponent<CanvasGroupAnimator>();
             _closeScale = new Vector3(1f, 0f, 1f);
-            _animator.SetImmediate(0f, new Vector3(1f, 0f, 1f)); // Start closed
+            _animator.SetImmediate(0f, _closeScale); // Start closed
             _visible = false;
 
             GameObject revealAudio = GameObject.Find("Ship_Body/Module_Cabin/Systems_Cabin/ShipLogPivot/ShipLog/ShipLogPivot/ShipLogCanvas/DescriptionField/TextRevealAudioSource");

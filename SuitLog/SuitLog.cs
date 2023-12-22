@@ -6,6 +6,8 @@ using OWML.ModHelper;
 using UnityEngine;
 using UnityEngine.UI;
 
+// TODO: show missing entries no animation desc field
+// TODO: show missing facts?
 namespace SuitLog
 {
     public class SuitLog : ModBehaviour
