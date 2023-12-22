@@ -125,11 +125,6 @@ namespace SuitLog
         {
             if (!_setupDone) return;
             // TODO: Add option to pause when helmet is fully on, but not if end times is playing
-            if (_open && !OWTime.IsPaused())
-            {
-                // Don't do this on Configure to not mess with the input mode (paused in menu)
-                CloseSuitLog();
-            }
             if (OWTime.IsPaused())
             {
                 // Setup is done, we can reference the prompts
