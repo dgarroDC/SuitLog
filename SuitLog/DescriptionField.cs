@@ -92,6 +92,12 @@ namespace SuitLog
             item._text = text;
             _items[i] = item;
 
+            // Patch 14 stuff, avoid NRE on Start()
+            item._uiSizeSetter = item.gameObject.AddComponent<NoOpUiSizeSetter>();
+            // Setting _requiresExternalInitialization is worthless because Awake is already called here, and _readyForResize=false won't work because MarkReadyForInitialization() on Start() of the item!
+            // I could set all the values to the current ones (for any language and size), but easier to make the no-op class...
+            // TODO: Maybe it would be nice to actually resize, even using the values of the Ship Log... Although it could be an issue of the hyphen/bullet being a separate text...
+
             // Set active to avoid NRE on first UpdatePromptsVisibility?
             itemContainer.SetActive(true);
             hyphen.gameObject.SetActive(true);
