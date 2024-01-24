@@ -1,6 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 using UnityEngine.UI;
 
 namespace SuitLog
@@ -59,7 +58,7 @@ namespace SuitLog
             _visible = false;
 
             GameObject revealAudio = GameObject.Find("Ship_Body/Module_Cabin/Systems_Cabin/ShipLogPivot/ShipLog/ShipLogPivot/ShipLogCanvas/DescriptionField/TextRevealAudioSource");
-            GameObject audioSourceObject = Object.Instantiate(revealAudio);
+            GameObject audioSourceObject = UnityEngine.Object.Instantiate(revealAudio);
             SuitLog.SetParent(audioSourceObject.transform, descFieldObject.transform);
             _audioSource = audioSourceObject.GetComponent<OWAudioSource>();
             _audioSource.SetTrack(OWAudioMixer.TrackName.Player); // Not sure if we need this
@@ -106,7 +105,7 @@ namespace SuitLog
 
         public void Update()
         {
-            UpdateTextReveal();
+            UpdateTextReveal(); // TODO: Clarify that this is done if fact assigned but prob not (only the main mode)
             UpdateScroll();
         }
 
@@ -180,32 +179,6 @@ namespace SuitLog
             _scrollPromptGamepad.SetVisibility(false);
             _scrollPromptKbm.SetVisibility(false);
         }
- 
-        public void SetEntry(ShipLogEntry entry)
-        {
-            ResetListPos();
-            List<ShipLogFact> facts = entry.GetFactsForDisplay();
-            for (int i = 0; i < _items.Length; i++)
-            {
-                if (i < facts.Count)
-                {
-                    _items[i].DisplayFact(facts[i]);
-                    _items[i].StartTextReveal();
-                }
-                else
-                {
-                    _items[i].Clear();
-                }
-            }
-
-            _displayCount = facts.Count;
-
-            if (entry.HasMoreToExplore())
-            {
-                _items[_displayCount].DisplayText(UITextLibrary.GetString(UITextType.ShipLogMoreThere));
-                _displayCount++;
-            }
-        }
 
         public void Open()
         {
@@ -221,6 +194,31 @@ namespace SuitLog
             {
                 _audioSource.Stop();
             }
+        }
+
+        public void Clear()
+        {
+            ResetListPos();
+            _displayCount = 0;
+            foreach (ShipLogFactListItem item in _items)
+            {
+                item.Clear();
+            }
+        }
+
+        public ShipLogFactListItem GetNextItem()
+        {
+            int nextIndex = _displayCount;
+            _displayCount++;
+            if (nextIndex == _items.Length)
+            {
+                // Create a new item
+                Array.Resize(ref _items, nextIndex + 1);
+                SetupItem(nextIndex);
+            }
+            ShipLogFactListItem nextItem = _items[nextIndex];
+            nextItem.DisplayText(string.Empty);
+            return nextItem;
         }
 
         private void ResetListPos()
