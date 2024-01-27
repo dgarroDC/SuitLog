@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using OWML.Common;
+using UnityEngine;
 
 namespace SuitLog;
 
@@ -13,6 +14,10 @@ public class SuitLogMode : ShipLogMode
     private OWAudioSource _oneShotSource;
     private ShipLogEntryHUDMarker _entryHUDMarker;
     private ShipLogManager _shipLogManager;
+
+    private ScreenPrompt _viewEntriesPrompt;
+    private ScreenPrompt _closeEntriesPrompt;
+    private ScreenPrompt _markOnHUDPrompt;
 
     private Dictionary<string, ShipLogAstroObject> _shipLogAstroObjects;
     private HashSet<string> _astroObjectIds;
@@ -61,11 +66,24 @@ public class SuitLogMode : ShipLogMode
         // in the Suit Log (in vanilla there is Timber Hearth that is always there), just select the first item...
         _selectedAstroObjectID = null; 
         _isEntryMenuOpen = false;
+
+        SetupPrompts();
+    }
+
+    private void SetupPrompts()
+    {
+        _viewEntriesPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.ViewEntries), UITextLibrary.GetString(UITextType.LogViewEntriesPrompt));
+        _closeEntriesPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.CloseEntries), "Close Entries");
+        _markOnHUDPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.MarkEntryOnHUD), ""); // This is updated
     }
 
     public override void EnterMode(string entryID = "", List<ShipLogFact> revealQueue = null)
     {
         LoadAstroObjectsMenu();
+        
+        Locator.GetPromptManager().AddScreenPrompt(_viewEntriesPrompt, _upperRightPromptList, TextAnchor.MiddleRight);
+        Locator.GetPromptManager().AddScreenPrompt(_closeEntriesPrompt, _upperRightPromptList, TextAnchor.MiddleRight);
+        Locator.GetPromptManager().AddScreenPrompt(_markOnHUDPrompt, _upperRightPromptList, TextAnchor.MiddleRight);
     }
     
     private void LoadAstroObjectsMenu()
@@ -123,6 +141,7 @@ public class SuitLogMode : ShipLogMode
                     entry.HasUnreadFacts(),
                     entry.HasMoreToExplore()
                 ));
+                // TODO: Move to another method: Load + Display!
                 _displayedEntryItems.Add(entry);
             }
         }
@@ -163,6 +182,10 @@ public class SuitLogMode : ShipLogMode
         {
             CloseEntryMenu();
         }
+        
+        Locator.GetPromptManager().RemoveScreenPrompt(_viewEntriesPrompt);
+        Locator.GetPromptManager().RemoveScreenPrompt(_closeEntriesPrompt);
+        Locator.GetPromptManager().RemoveScreenPrompt(_markOnHUDPrompt);
     }
 
     public override void OnEnterComputer()
@@ -222,8 +245,37 @@ public class SuitLogMode : ShipLogMode
         {
             itemList.descriptionField.Update();
         }
+
+        UpdatePromptsVisibility();
     }
-    
+
+    private void UpdatePromptsVisibility()
+    {
+        _viewEntriesPrompt.SetVisibility(!_isEntryMenuOpen);
+        _closeEntriesPrompt.SetVisibility(_isEntryMenuOpen);
+        bool showMarkOnHUDPrompt = false;
+        if (_isEntryMenuOpen)
+        {
+            ShipLogEntry entry = _displayedEntryItems[itemList.selectedIndex];
+            if (CanEntryBeMarkedOnHUD(entry))
+            {
+                showMarkOnHUDPrompt = true;
+                string text = IsEntryMarkedOnHUD(entry) ? // TODO: Use the index and bool on tuple?
+                    UITextLibrary.GetString(UITextType.LogRemoveMarkerPrompt) : 
+                    UITextLibrary.GetString(UITextType.LogMarkLocationPrompt);
+                _markOnHUDPrompt.SetText(text);
+            }
+        }
+        _markOnHUDPrompt.SetVisibility(showMarkOnHUDPrompt);
+    }
+
+    public void HideAllPrompts()
+    {
+        _viewEntriesPrompt.SetVisibility(false);
+        _closeEntriesPrompt.SetVisibility(false);
+        _markOnHUDPrompt.SetVisibility(false);
+    }
+
     private void OpenEntryMenu()
     {
         LoadEntriesMenu();
@@ -293,14 +345,12 @@ public class SuitLogMode : ShipLogMode
     {
         itemList.photo.enabled = true;
         itemList.photo.sprite = entry.GetSprite();
-        //FIXME: SetPromptsPosition(-250f);
     }
 
     private void HidePhoto()
     {
         itemList.photo.enabled = false;
         itemList.photo.sprite = null; // TODO: Is this needed?
-        //FIXME: SetPromptsPosition(0f);
     }
 
     public override bool AllowModeSwap()

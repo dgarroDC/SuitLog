@@ -16,10 +16,11 @@ namespace SuitLog
         private CanvasGroupAnimator _animator;
         private Vector3 _closeScale;
         
+        private readonly ScreenPromptList _upperRightPromptList;
         private ScreenPrompt _scrollPromptGamepad;
         private ScreenPrompt _scrollPromptKbm;
 
-        internal DescriptionField(GameObject suitLog)
+        internal DescriptionField(GameObject suitLog, ScreenPromptList upperRightPromptList)
         {
             // I should probably reuse ShipLogEntryDescriptionField...
             GameObject descFieldObject = new GameObject("DescriptionField");
@@ -62,6 +63,9 @@ namespace SuitLog
             SuitLog.SetParent(audioSourceObject.transform, descFieldObject.transform);
             _audioSource = audioSourceObject.GetComponent<OWAudioSource>();
             _audioSource.SetTrack(OWAudioMixer.TrackName.Player); // Not sure if we need this
+
+            _upperRightPromptList = upperRightPromptList;
+            SetupPrompts();
         }
 
         private void SetupItem(int i)
@@ -107,6 +111,7 @@ namespace SuitLog
         {
             UpdateTextReveal(); // TODO: Clarify that this is done if fact assigned but prob not (only the main mode)
             UpdateScroll();
+            UpdatePromptsVisibility();
         }
 
         private void UpdateTextReveal()
@@ -160,10 +165,6 @@ namespace SuitLog
             string prompt = UITextLibrary.GetString(UITextType.LogScrollTextPrompt);          
             _scrollPromptGamepad = new ScreenPrompt(Input.PromptCommands(Input.Action.ScrollFactsGamepad), prompt); 
             _scrollPromptKbm  = new ScreenPrompt(Input.PromptCommands(Input.Action.ScrollFactsKbm), prompt);
-            Locator.GetPromptManager().AddScreenPrompt(_scrollPromptGamepad, PromptPosition.UpperRight);
-            Locator.GetPromptManager().AddScreenPrompt(_scrollPromptKbm, PromptPosition.UpperRight);
-            // _scrollPromptGamepad.SetDisplayState(ScreenPrompt.DisplayState.Attention);
-            // _scrollPromptKbm.SetDisplayState(ScreenPrompt.DisplayState.Attention);
         }
 
         public void UpdatePromptsVisibility()
@@ -184,6 +185,10 @@ namespace SuitLog
         {
             _visible = true;
             _animator.AnimateTo( 1,  Vector3.one , SuitLog.OpenAnimationDuration);
+            Locator.GetPromptManager().AddScreenPrompt(_scrollPromptGamepad, _upperRightPromptList, TextAnchor.MiddleRight);
+            Locator.GetPromptManager().AddScreenPrompt(_scrollPromptKbm, _upperRightPromptList, TextAnchor.MiddleRight);
+            // _scrollPromptGamepad.SetDisplayState(ScreenPrompt.DisplayState.Attention);
+            // _scrollPromptKbm.SetDisplayState(ScreenPrompt.DisplayState.Attention);
         }
 
         public void Close()
@@ -194,6 +199,8 @@ namespace SuitLog
             {
                 _audioSource.Stop();
             }
+            Locator.GetPromptManager().RemoveScreenPrompt(_scrollPromptGamepad);
+            Locator.GetPromptManager().RemoveScreenPrompt(_scrollPromptKbm);
         }
 
         public void Clear()

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using OWML.ModHelper;
+﻿using OWML.ModHelper;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -22,9 +21,6 @@ namespace SuitLog
 
         private ScreenPrompt _openPrompt;
         private ScreenPrompt _closePrompt;
-        private ScreenPrompt _viewEntriesPrompt;
-        private ScreenPrompt _closeEntriesPrompt;
-        private ScreenPrompt _markOnHUDPrompt;
 
         internal const float OpenAnimationDuration = 0.13f;
         internal const float CloseAnimationDuration = 0.3f;
@@ -54,9 +50,8 @@ namespace SuitLog
         {
             _toolModeSwapper = Locator.GetToolModeSwapper();
             _upperRightPromptList = Locator.GetPromptManager().GetScreenPromptList(PromptPosition.UpperRight);
-            _upperRightPromptsRect =  _upperRightPromptList.GetComponent<RectTransform>();
 
-            _itemlist = SuitLogItemList.Create(); // TODO: Pass audio and prompts?
+            _itemlist = SuitLogItemList.Create(_upperRightPromptList);
             _suitLogMode = _itemlist.gameObject.AddComponent<SuitLogMode>();
             _suitLogMode.itemList = _itemlist;
             _suitLogMode.shipLogMap = mapMode;
@@ -71,7 +66,7 @@ namespace SuitLog
         {
             if (!_setupDone) return;
             // TODO: Add option to pause when helmet is fully on, but not if end times is playing
-            if (OWTime.IsPaused())
+            if (Locator.GetSceneMenuManager().pauseMenu.IsOpen())
             {
                 // Setup is done, we can reference the prompts
                 HideAllPrompts();
@@ -129,14 +124,6 @@ namespace SuitLog
             _itemlist.Close();
         }
 
-        private void SetPromptsPosition(float positionY)
-        {
-            // See PromptManager: Lower the prompts when the image is displayed
-            Vector2 anchoredPosition = _upperRightPromptsRect.anchoredPosition;
-            anchoredPosition.y = positionY;
-            _upperRightPromptsRect.anchoredPosition = anchoredPosition;
-        }
-
         private bool IsSuitLogOpenable()
         {
             return !_open &&
@@ -158,50 +145,24 @@ namespace SuitLog
         private void SetupPrompts()
         {
             // TODO: Translations
-            // _openPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.OpenSuitLog), "Open Suit Log");
-            // _closePrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.CloseSuitLog), "Close Suit Log");
-            // _viewEntriesPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.ViewEntries), UITextLibrary.GetString(UITextType.LogViewEntriesPrompt));
-            // _closeEntriesPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.CloseEntries), "Close Entries");
-            // _markOnHUDPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.MarkEntryOnHUD), ""); // This is updated
-            // Locator.GetPromptManager().AddScreenPrompt(_openPrompt, PromptPosition.UpperRight);
-            // Locator.GetPromptManager().AddScreenPrompt(_closePrompt, PromptPosition.UpperRight);
-            // Locator.GetPromptManager().AddScreenPrompt(_viewEntriesPrompt, PromptPosition.UpperRight);
-            // Locator.GetPromptManager().AddScreenPrompt(_closeEntriesPrompt, PromptPosition.UpperRight);
-            // Locator.GetPromptManager().AddScreenPrompt(_markOnHUDPrompt, PromptPosition.UpperRight);
-            // _descField.SetupPrompts();
+            _openPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.OpenSuitLog), "Open Suit Log");
+            _closePrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.CloseSuitLog), "Close Suit Log");
+            Locator.GetPromptManager().AddScreenPrompt(_openPrompt, PromptPosition.UpperRight);
+            Locator.GetPromptManager().AddScreenPrompt(_closePrompt, PromptPosition.UpperRight);
         }
 
         private void UpdatePromptsVisibility()
         {
-            // _openPrompt.SetVisibility(IsSuitLogOpenable());
-            // _closePrompt.SetVisibility(_open && !_isEntryMenuOpen);
-            // _viewEntriesPrompt.SetVisibility(_open && !_isEntryMenuOpen);
-            // _closeEntriesPrompt.SetVisibility(_open && _isEntryMenuOpen);
-            // bool showMarkOnHUDPrompt = false;
-            // if (_open && _isEntryMenuOpen)
-            // {
-            //     ShipLogEntry entry = _entryItems[_selectedItem];
-            //     if (CanEntryBeMarkedOnHUD(entry))
-            //     {
-            //         showMarkOnHUDPrompt = true;
-            //         string text = IsEntryMarkedOnHUD(entry) ? // TODO: Use the index and bool on tuple?
-            //             UITextLibrary.GetString(UITextType.LogRemoveMarkerPrompt) : 
-            //             UITextLibrary.GetString(UITextType.LogMarkLocationPrompt);
-            //         _markOnHUDPrompt.SetText(text);
-            //     }
-            // }
-            // _markOnHUDPrompt.SetVisibility(showMarkOnHUDPrompt);
-            // _descField.UpdatePromptsVisibility();
+            _openPrompt.SetVisibility(IsSuitLogOpenable());
+            _closePrompt.SetVisibility(_open && _suitLogMode.AllowCancelInput()); // Maybe _open not needed???
         }
- 
+
         private void HideAllPrompts()
         {
-            // _openPrompt.SetVisibility(false);
-            // _closePrompt.SetVisibility(false);
-            // _viewEntriesPrompt.SetVisibility(false);
-            // _closeEntriesPrompt.SetVisibility(false);
-            // _markOnHUDPrompt.SetVisibility(false);
-            // _descField.HideAllPrompts();
+            _openPrompt.SetVisibility(false);
+            _closePrompt.SetVisibility(false);
+            _itemlist.HideAllPrompts();
+            _suitLogMode.HideAllPrompts(); // TODO: Suggest other mods do the same! API utility?? (listener??)
         }
 
         internal static void SetParent(Transform child, Transform parent)

@@ -20,20 +20,22 @@ public class SuitLogItemList : MonoBehaviour
     public List<Text> uiItems; // TODO: ShipLogEntryListItem??
     public List<Tuple<string, bool, bool, bool>> contentsItems = new();
     public ListNavigator listNavigator;
-    
+
+    private RectTransform _upperRightPromptsRect;
+
     private CanvasGroupAnimator _suitLogAnimator;
     private CanvasGroupAnimator _notificationsAnimator;
 
-    public static SuitLogItemList Create()
+    public static SuitLogItemList Create(ScreenPromptList upperRightPromptList)
     {
         GameObject canvas = GameObject.Find("PlayerHUD/HelmetOnUI/UICanvas/");
         GameObject suitLog = new GameObject("SuitLog", typeof(RectTransform));
         SuitLogItemList itemList = suitLog.AddComponent<SuitLogItemList>();
-        itemList.Setup(canvas);
+        itemList.Setup(canvas, upperRightPromptList);
         return itemList;
     }
 
-    private void Setup(GameObject canvas)
+    private void Setup(GameObject canvas, ScreenPromptList upperRightPromptList)
     {
         // TODO: Move stuff to Start?
         SuitLog.SetParent(transform, canvas.transform);
@@ -72,8 +74,10 @@ public class SuitLogItemList : MonoBehaviour
         SuitLog.SetParent(audioSourceObject.transform, transform);
         oneShotSource = audioSourceObject.GetComponent<OWAudioSource>();
         
-        descriptionField = new DescriptionField(gameObject);
+        descriptionField = new DescriptionField(gameObject, upperRightPromptList);
         listNavigator = new ListNavigator(); // This is a component in CSLM but whatever...
+
+        _upperRightPromptsRect = upperRightPromptList.GetComponent<RectTransform>();
     }
 
     public void Open()
@@ -90,6 +94,19 @@ public class SuitLogItemList : MonoBehaviour
         _suitLogAnimator.AnimateTo(0, Vector3.one, SuitLog.CloseAnimationDuration);
         _notificationsAnimator.AnimateTo(1, Vector3.one, SuitLog.CloseAnimationDuration);
         oneShotSource.PlayOneShot(AudioType.ShipLogDeselectPlanet);
+    }
+    
+    public void HideAllPrompts()
+    {
+        descriptionField.HideAllPrompts();
+    }
+
+    private void SetPromptsPosition(float positionY)
+    {
+        // See PromptManager: Lower the prompts when the image is displayed
+        Vector2 anchoredPosition = _upperRightPromptsRect.anchoredPosition;
+        anchoredPosition.y = positionY;
+        _upperRightPromptsRect.anchoredPosition = anchoredPosition;
     }
 
     public void UpdateListUI()
@@ -137,6 +154,16 @@ public class SuitLogItemList : MonoBehaviour
             {
                 text.gameObject.SetActive(false);
             }
+        }
+        
+        // TODO: Clarify this in docs
+        if (photo.enabled)
+        {
+            SetPromptsPosition(-250f);
+        }
+        else
+        {
+            SetPromptsPosition(0f);
         }
     }
 
