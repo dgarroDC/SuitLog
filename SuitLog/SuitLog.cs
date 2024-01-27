@@ -16,9 +16,8 @@ namespace SuitLog
         private SuitLogMode _suitLogMode;
 
         private ToolModeSwapper _toolModeSwapper;
+ 
         private ScreenPromptList _upperRightPromptList;
-        private RectTransform _upperRightPromptsRect;
-
         private ScreenPrompt _openPrompt;
         private ScreenPrompt _closePrompt;
 

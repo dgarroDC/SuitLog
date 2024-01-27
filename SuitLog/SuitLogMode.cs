@@ -107,9 +107,9 @@ public class SuitLogMode : ShipLogMode
             {
                 itemList.selectedIndex = items.Count; // Next element to insert
             }
-            //FIXME: state == ShipLogEntry.State.Rumored
+
             items.Add(new Tuple<string, bool, bool, bool>(
-                astroObject.GetName(), 
+                GetColoredName(astroObject.GetName(), state), 
                 false,
                 astroObject._unviewedObj.activeSelf, // In ship log, astro objects use the * symbol with the unread color, but this is better...
                 false
@@ -132,11 +132,11 @@ public class SuitLogMode : ShipLogMode
         List<ShipLogEntry> entries = selectedAstroObject._entries;
         foreach (ShipLogEntry entry in entries)
         {
-            if (entry.GetState() == ShipLogEntry.State.Explored || entry.GetState() == ShipLogEntry.State.Rumored)
+            ShipLogEntry.State state = entry.GetState();
+            if (state == ShipLogEntry.State.Explored || state == ShipLogEntry.State.Rumored)
             {
-                //FIXME: entry.GetState() == ShipLogEntry.State.Rumored 
                 items.Add(new Tuple<string, bool, bool, bool>(
-                    GetEntryNameWithIndentation(entry),
+                    GetNameWithIndentation(GetColoredName(entry.GetName(false), state), GetEntryIndentation(entry)),
                     IsEntryMarkedOnHUD(entry),
                     entry.HasUnreadFacts(),
                     entry.HasMoreToExplore()
@@ -150,10 +150,19 @@ public class SuitLogMode : ShipLogMode
         itemList.SetName(selectedAstroObject.GetName());
     }
 
-    private string GetEntryNameWithIndentation(ShipLogEntry entry)
+    private string GetColoredName(string name, ShipLogEntry.State state)
     {
-        string name = entry.GetName(false);
-        int indentation = GetEntryIndentation(entry);
+        if (state == ShipLogEntry.State.Rumored)
+        {
+            string rumorColor = ColorUtility.ToHtmlStringRGB(Locator.GetUIStyleManager().GetShipLogRumorColor());
+            name = "<color=#" + rumorColor + ">" + name + "</color>";
+        }
+
+        return name;
+    }
+    
+    private string GetNameWithIndentation(string name, int indentation)
+    {
         return new string(' ', indentation) + name;
     }
     
@@ -350,7 +359,6 @@ public class SuitLogMode : ShipLogMode
     private void HidePhoto()
     {
         itemList.photo.enabled = false;
-        itemList.photo.sprite = null; // TODO: Is this needed?
     }
 
     public override bool AllowModeSwap()

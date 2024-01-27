@@ -90,10 +90,15 @@ public class SuitLogItemList : MonoBehaviour
 
     public void Close()
     {
-
         _suitLogAnimator.AnimateTo(0, Vector3.one, SuitLog.CloseAnimationDuration);
         _notificationsAnimator.AnimateTo(1, Vector3.one, SuitLog.CloseAnimationDuration);
         oneShotSource.PlayOneShot(AudioType.ShipLogDeselectPlanet);
+
+        // TODO: Clarify that this happens, suggest only changing these fields?? Also don't touch the material?
+        // TODO: What happens if material with snapshot is mix up with sprite???
+        // For ProbeLauncherUI
+        photo.enabled = false;
+        photo.sprite = null;
     }
     
     public void HideAllPrompts()
@@ -146,7 +151,6 @@ public class SuitLogItemList : MonoBehaviour
                     // Select arrow icon
                     displayText = "<color=#FFA431>></color> " + displayText;
                 }
-                //FIXME: MapMode? text.color = item.rumored ? Locator.GetUIStyleManager().GetShipLogRumorColor() : Color.white;
                 text.text = displayText;
                 text.gameObject.SetActive(true);
             }
