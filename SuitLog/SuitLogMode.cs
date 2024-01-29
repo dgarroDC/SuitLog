@@ -20,12 +20,11 @@ public class SuitLogMode : ShipLogMode
     private ScreenPrompt _markOnHUDPrompt;
 
     private Dictionary<string, ShipLogAstroObject> _shipLogAstroObjects;
-    private HashSet<string> _astroObjectIds;
     private List<string> _displayedAtroObjectIds = new();
     private List<ShipLogEntry> _displayedEntryItems = new();
 
-    private bool _isEntryMenuOpen; // <=> _entryItems not empty TODO: what? maybe this will change
-    private string _selectedAstroObjectID;
+    private bool _isEntryMenuOpen;
+    private string _selectedAstroObjectID; // TODO: Redundant?
 
     public override void Initialize(ScreenPromptList centerPromptList, ScreenPromptList upperRightPromptList, OWAudioSource oneShotSource)
     {
@@ -44,16 +43,10 @@ public class SuitLogMode : ShipLogMode
                 _shipLogAstroObjects.Add(astroObject.GetID(), astroObject);
             }
         }
-        _astroObjectIds = new HashSet<string>();
         foreach (ShipLogEntry entry in _shipLogManager.GetEntryList())
         {
-            // We only want to show these astro objects, also iterating this gives a nice order in stock planets (?
             string astroObjectID = entry.GetAstroObjectID();
-            if (_shipLogAstroObjects.ContainsKey(astroObjectID))
-            {
-                _astroObjectIds.Add(astroObjectID); 
-            }
-            else
+            if (!_shipLogAstroObjects.ContainsKey(astroObjectID))
             {
                 SuitLog.Instance.ModHelper.Console.WriteLine(
                     $"Entry {entry.GetID()} has an invalid astro object id {entry.GetAstroObjectID()}, " +
@@ -73,6 +66,7 @@ public class SuitLogMode : ShipLogMode
     private void SetupPrompts()
     {
         _viewEntriesPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.ViewEntries), UITextLibrary.GetString(UITextType.LogViewEntriesPrompt));
+        // TODO: Close Entries is not the best text for hidden astro object
         _closeEntriesPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.CloseEntries), "Close Entries");
         _markOnHUDPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.MarkEntryOnHUD), ""); // This is updated
     }
@@ -91,30 +85,31 @@ public class SuitLogMode : ShipLogMode
         itemList.selectedIndex = 0; // Unnecessary statement probably...
         List<Tuple<string, bool, bool, bool>> items = new();
         _displayedAtroObjectIds.Clear();
-        foreach (string astroObjectId in _astroObjectIds)
+        foreach ((string astroObjectId, ShipLogAstroObject astroObject) in _shipLogAstroObjects)
         {
-            ShipLogAstroObject astroObject = _shipLogAstroObjects[astroObjectId];
             astroObject.OnEnterComputer();
             astroObject.UpdateState();
-            ShipLogEntry.State state = astroObject.GetState(); 
-            if (state != ShipLogEntry.State.Explored && state != ShipLogEntry.State.Rumored) continue;
-            if (_selectedAstroObjectID == null)
+            if (astroObject.IsVisible()) // Exploded, Rumored and Hidden with !_invisibleWhenHidden
             {
-                // This will make the first item to be selected the first time
-                _selectedAstroObjectID = astroObjectId;
-            }
-            if (astroObjectId == _selectedAstroObjectID)
-            {
-                itemList.selectedIndex = items.Count; // Next element to insert
-            }
+                if (_selectedAstroObjectID == null)
+                {
+                    // This will make the first item to be selected the first time
+                    _selectedAstroObjectID = astroObjectId;
+                }
 
-            items.Add(new Tuple<string, bool, bool, bool>(
-                GetColoredName(astroObject.GetName(), state), 
-                false,
-                astroObject._unviewedObj.activeSelf, // In ship log, astro objects use the * symbol with the unread color, but this is better...
-                false
-            ));
-            _displayedAtroObjectIds.Add(astroObjectId);
+                if (astroObjectId == _selectedAstroObjectID)
+                {
+                    itemList.selectedIndex = items.Count; // Next element to insert
+                }
+
+                items.Add(new Tuple<string, bool, bool, bool>(
+                    GetColoredName(astroObject.GetName(), astroObject.GetState()),
+                    false,
+                    astroObject._unviewedObj.activeSelf, // In ship log, astro objects use the * symbol with the unread color, but this is better...
+                    false
+                ));
+                _displayedAtroObjectIds.Add(astroObjectId);
+            }
         }
 
         itemList.contentsItems = items; // TODO: API
@@ -152,10 +147,19 @@ public class SuitLogMode : ShipLogMode
 
     private string GetColoredName(string name, ShipLogEntry.State state)
     {
+        Color? color = null;
         if (state == ShipLogEntry.State.Rumored)
         {
-            string rumorColor = ColorUtility.ToHtmlStringRGB(Locator.GetUIStyleManager().GetShipLogRumorColor());
-            name = "<color=#" + rumorColor + ">" + name + "</color>";
+            color = Locator.GetUIStyleManager().GetShipLogRumorColor();
+        }
+        else if (state == ShipLogEntry.State.Hidden)
+        {
+            color = Color.red;
+        }
+
+        if (color.HasValue)
+        {
+            name = "<color=#" + ColorUtility.ToHtmlStringRGB(color.Value) + ">" + name + "</color>";
         }
 
         return name;
@@ -223,7 +227,7 @@ public class SuitLogMode : ShipLogMode
                 UpdateSelectedEntry();
             }
         } 
-        else if (_isEntryMenuOpen && Input.IsNewlyPressed(Input.Action.MarkEntryOnHUD))
+        else if (_isEntryMenuOpen && _displayedEntryItems.Count > 0 && Input.IsNewlyPressed(Input.Action.MarkEntryOnHUD))
         {
             ShipLogEntry entry = _displayedEntryItems[prevSelectedIndex];
             if (CanEntryBeMarkedOnHUD(entry))
@@ -241,7 +245,7 @@ public class SuitLogMode : ShipLogMode
                 LoadEntriesMenu();
             }
         }
-        else if (!_isEntryMenuOpen && Input.IsNewlyPressed(Input.Action.ViewEntries))
+        else if (!_isEntryMenuOpen && _displayedAtroObjectIds.Count > 0 && Input.IsNewlyPressed(Input.Action.ViewEntries))
         {
             OpenEntryMenu();
         }
@@ -260,10 +264,11 @@ public class SuitLogMode : ShipLogMode
 
     private void UpdatePromptsVisibility()
     {
-        _viewEntriesPrompt.SetVisibility(!_isEntryMenuOpen);
+        // > 0 because it could be empty
+        _viewEntriesPrompt.SetVisibility(!_isEntryMenuOpen && _displayedAtroObjectIds.Count > 0 && _shipLogAstroObjects[_selectedAstroObjectID].GetState() != ShipLogEntry.State.Hidden);
         _closeEntriesPrompt.SetVisibility(_isEntryMenuOpen);
         bool showMarkOnHUDPrompt = false;
-        if (_isEntryMenuOpen)
+        if (_isEntryMenuOpen && _displayedEntryItems.Count > 0)
         {
             ShipLogEntry entry = _displayedEntryItems[itemList.selectedIndex];
             if (CanEntryBeMarkedOnHUD(entry))
@@ -297,9 +302,12 @@ public class SuitLogMode : ShipLogMode
 
     private void CloseEntryMenu()
     {
-        MarkAsRead(itemList.selectedIndex);
-        LoadAstroObjectsMenu();
+        if (_displayedEntryItems.Count > 0)
+        {
+            MarkAsRead(itemList.selectedIndex);
+        }
         itemList.descriptionField.Close();
+        LoadAstroObjectsMenu();
         HidePhoto();
         _displayedEntryItems.Clear(); // TODO: Why?
         _isEntryMenuOpen = false;
@@ -315,7 +323,7 @@ public class SuitLogMode : ShipLogMode
         {
             ShipLogEntry entry = _displayedEntryItems[index];
             entry.MarkAsRead();
-            LoadEntriesMenu();
+            LoadEntriesMenu(); // TODO: Maybe move this out, not necessary on close entry menu...
         }
     }
 
@@ -326,27 +334,37 @@ public class SuitLogMode : ShipLogMode
 
     private void UpdateSelectedEntry()
     {
-        ShipLogEntry entry = _displayedEntryItems[itemList.selectedIndex];
         itemList.DescriptionFieldClear();
-        List<ShipLogFact> facts = entry.GetFactsForDisplay();
-        foreach (ShipLogFact fact in facts)
+        if (_displayedEntryItems.Count > 0)
         {
-            ShipLogFactListItem item = itemList.DescriptionFieldGetNextItem();
-            item.DisplayFact(fact);
-            item.StartTextReveal();
-        }
+            ShipLogEntry entry = _displayedEntryItems[itemList.selectedIndex];
+            List<ShipLogFact> facts = entry.GetFactsForDisplay();
+            foreach (ShipLogFact fact in facts)
+            {
+                ShipLogFactListItem item = itemList.DescriptionFieldGetNextItem();
+                item.DisplayFact(fact);
+                item.StartTextReveal();
+            }
 
-        if (entry.HasMoreToExplore())
-        {
-            itemList.DescriptionFieldGetNextItem().DisplayText(UITextLibrary.GetString(UITextType.ShipLogMoreThere));
-        }
-        if (entry.GetState() == ShipLogEntry.State.Explored)
-        {
-            ShowPhoto(entry);
+            if (entry.HasMoreToExplore())
+            {
+                itemList.DescriptionFieldGetNextItem()
+                    .DisplayText(UITextLibrary.GetString(UITextType.ShipLogMoreThere));
+            }
+            if (entry.GetState() == ShipLogEntry.State.Explored)
+            {
+                ShowPhoto(entry);
+            }
+            else
+            {
+                HidePhoto();
+            }
         }
         else
         {
-            HidePhoto();
+            // In MapModeMode, this would happen at OpenEntryMenu
+            itemList.DescriptionFieldGetNextItem()
+                .DisplayText(UITextLibrary.GetString(UITextType.LogNoDiscoveriesPrompt));
         }
     }
     

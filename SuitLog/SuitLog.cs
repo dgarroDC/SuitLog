@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-// TODO: show missing entries no animation desc field
+// TODO: show missing entries no animation desc field (what?)
 // TODO: show missing facts?
 namespace SuitLog
 {
@@ -107,6 +107,7 @@ namespace SuitLog
             }
             else
             {
+                _suitLogMode.ExitMode();
                 // TODO: What about custom modes??? Open custom mode if map mode empty, if no custom mode available, display this notif??
                 // TODO: Translation
                 // This case shouldn't be possible in vanilla because the fact TH_VILLAGE_X1 is always revealed, this was added for New Horizons

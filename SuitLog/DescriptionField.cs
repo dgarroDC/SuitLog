@@ -183,24 +183,30 @@ namespace SuitLog
 
         public void Open()
         {
-            _visible = true;
-            _animator.AnimateTo( 1,  Vector3.one , SuitLog.OpenAnimationDuration);
-            Locator.GetPromptManager().AddScreenPrompt(_scrollPromptGamepad, _upperRightPromptList, TextAnchor.MiddleRight);
-            Locator.GetPromptManager().AddScreenPrompt(_scrollPromptKbm, _upperRightPromptList, TextAnchor.MiddleRight);
-            // _scrollPromptGamepad.SetDisplayState(ScreenPrompt.DisplayState.Attention);
-            // _scrollPromptKbm.SetDisplayState(ScreenPrompt.DisplayState.Attention);
+            if (!_visible)
+            {
+                _visible = true;
+                _animator.AnimateTo( 1,  Vector3.one , SuitLog.OpenAnimationDuration);
+                Locator.GetPromptManager().AddScreenPrompt(_scrollPromptGamepad, _upperRightPromptList, TextAnchor.MiddleRight);
+                Locator.GetPromptManager().AddScreenPrompt(_scrollPromptKbm, _upperRightPromptList, TextAnchor.MiddleRight);
+                // _scrollPromptGamepad.SetDisplayState(ScreenPrompt.DisplayState.Attention);
+                // _scrollPromptKbm.SetDisplayState(ScreenPrompt.DisplayState.Attention);
+            }
         }
 
         public void Close()
         {
-            _visible = false;
-            _animator.AnimateTo( 0, _closeScale, SuitLog.CloseAnimationDuration);
-            if (_audioSource.isPlaying)
+            if (_visible)
             {
-                _audioSource.Stop();
+                _visible = false;
+                _animator.AnimateTo( 0, _closeScale, SuitLog.CloseAnimationDuration);
+                if (_audioSource.isPlaying)
+                {
+                    _audioSource.Stop();
+                }
+                Locator.GetPromptManager().RemoveScreenPrompt(_scrollPromptGamepad);
+                Locator.GetPromptManager().RemoveScreenPrompt(_scrollPromptKbm);
             }
-            Locator.GetPromptManager().RemoveScreenPrompt(_scrollPromptGamepad);
-            Locator.GetPromptManager().RemoveScreenPrompt(_scrollPromptKbm);
         }
 
         public void Clear()
