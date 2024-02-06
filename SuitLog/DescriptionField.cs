@@ -4,6 +4,7 @@ using UnityEngine.UI;
 
 namespace SuitLog
 {
+    // TODO: MonoBehaviour, Update() when enabled
     public class DescriptionField
     {
         private OWAudioSource _audioSource;
@@ -20,12 +21,12 @@ namespace SuitLog
         private ScreenPrompt _scrollPromptGamepad;
         private ScreenPrompt _scrollPromptKbm;
 
-        internal DescriptionField(GameObject suitLog, ScreenPromptList upperRightPromptList)
+        internal DescriptionField(Transform suitLog, ScreenPromptList upperRightPromptList)
         {
             // I should probably reuse ShipLogEntryDescriptionField...
             GameObject descFieldObject = new GameObject("DescriptionField");
             _descField = descFieldObject.AddComponent<RectTransform>();
-            SuitLog.SetParent(_descField, suitLog.transform);
+            SuitLog.SetParent(_descField, suitLog);
             _descField.sizeDelta = new Vector2(600, 290);
             _descField.anchoredPosition = new Vector2(0, -425); 
             _descField.anchorMin = new Vector2(0, 1);

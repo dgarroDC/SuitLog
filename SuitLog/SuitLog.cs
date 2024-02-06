@@ -47,18 +47,24 @@ namespace SuitLog
         // TODO: separate method that takes the map mode, or controller??
         private void Setup(ShipLogMapMode mapMode)
         {
+            _open = false;
+
             _toolModeSwapper = Locator.GetToolModeSwapper();
             _upperRightPromptList = Locator.GetPromptManager().GetScreenPromptList(PromptPosition.UpperRight);
 
-            _itemlist = SuitLogItemList.Create(_upperRightPromptList);
-            _suitLogMode = _itemlist.gameObject.AddComponent<SuitLogMode>();
-            _suitLogMode.itemList = _itemlist;
-            _suitLogMode.shipLogMap = mapMode;
-            _suitLogMode.Initialize(null, _upperRightPromptList, _itemlist.oneShotSource);
-            SetupPrompts();
-            
-            _open = false;
-            _setupDone = true;
+            SuitLogItemList.CreatePrefab(_upperRightPromptList);
+            SuitLogItemList.Make(itemList =>
+            {
+                _itemlist = (SuitLogItemList) itemList;
+                _suitLogMode = _itemlist.gameObject.AddComponent<SuitLogMode>();
+                _suitLogMode.itemList = _itemlist;
+                _suitLogMode.shipLogMap = mapMode;
+                _suitLogMode.name = nameof(SuitLogMode);
+                _suitLogMode.Initialize(null, _upperRightPromptList, _itemlist.oneShotSource);
+
+                SetupPrompts();
+                _setupDone = true;
+            });
         }
 
         private void Update()
@@ -161,7 +167,7 @@ namespace SuitLog
         {
             _openPrompt.SetVisibility(false);
             _closePrompt.SetVisibility(false);
-            _itemlist.HideAllPrompts();
+            _itemlist.HideAllPrompts(); // TODO: How to handle this with custom modes??? Shared desc field?
             _suitLogMode.HideAllPrompts(); // TODO: Suggest other mods do the same! API utility?? (listener??)
         }
 

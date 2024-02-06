@@ -2,7 +2,7 @@
 
 namespace SuitLog
 {
-    public class ListNavigator
+    public class ListNavigator : MonoBehaviour
     {
         private float _pressedUpTimer;
         private float _pressedDownTimer;

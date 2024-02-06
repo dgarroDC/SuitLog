@@ -8,9 +8,12 @@ namespace SuitLog;
 // A lot of code is copied from Custom Ship Log Modes (CSLM) ShipLogItemList
 public class SuitLogItemList : MonoBehaviour
 {
+    private static GameObject _prefab;
+    private static Transform _commonParent;
+    private static DescriptionField _descriptionField; // TODO: idk
+
     private const int TotalUIItems = 10; // Always 10, not variable like in Custom Ship Log Modes
 
-    // idk why public, like Custom Ship Log Modes...
     public OWAudioSource oneShotSource; // Well this is used for the custom modes I guess
     public Text nameField;
     public Image photo;
@@ -21,26 +24,32 @@ public class SuitLogItemList : MonoBehaviour
     public List<Tuple<string, bool, bool, bool>> contentsItems = new();
     public ListNavigator listNavigator;
 
-    private RectTransform _upperRightPromptsRect;
+    public RectTransform upperRightPromptsRect;
 
-    private CanvasGroupAnimator _suitLogAnimator;
-    private CanvasGroupAnimator _notificationsAnimator;
+    public CanvasGroupAnimator suitLogAnimator;
+    public CanvasGroupAnimator notificationsAnimator;
 
-    public static SuitLogItemList Create(ScreenPromptList upperRightPromptList)
+    public static void CreatePrefab(ScreenPromptList upperRightPromptList)
     {
         GameObject canvas = GameObject.Find("PlayerHUD/HelmetOnUI/UICanvas/");
-        GameObject suitLog = new GameObject("SuitLog", typeof(RectTransform));
-        SuitLogItemList itemList = suitLog.AddComponent<SuitLogItemList>();
+        GameObject prefab = new GameObject("ItemsList", typeof(RectTransform));
+        SuitLogItemList itemList = prefab.AddComponent<SuitLogItemList>();
         itemList.Setup(canvas, upperRightPromptList);
-        return itemList;
+        
+        // Parent object for all item lists
+        GameObject commonParentGo = new GameObject("SuitLog", typeof(RectTransform));
+        _commonParent = commonParentGo.transform;
+        SuitLog.SetParent(_commonParent, canvas.transform);
+        _commonParent.localPosition = new Vector3(-280, 260, 0);
+
+        _descriptionField = new DescriptionField(_commonParent, upperRightPromptList);
+
+        _prefab = prefab; // We can do it in the same frame for now, unlike CSLM
     }
 
     private void Setup(GameObject canvas, ScreenPromptList upperRightPromptList)
     {
-        // TODO: Move stuff to Start?
-        SuitLog.SetParent(transform, canvas.transform);
-        transform.localPosition = new Vector3(-280, 260, 0);
-
+        // TODO: Make this part of list
         photo = GameObject.Find("PlayerHUD/HelmetOnUI/UICanvas/HUDProbeDisplay/Image").GetComponent<Image>();
 
         // Title
@@ -64,34 +73,43 @@ public class SuitLogItemList : MonoBehaviour
             uiItems.Add(text);
         }
             
-        _suitLogAnimator = gameObject.AddComponent<CanvasGroupAnimator>();
-        _suitLogAnimator.SetImmediate(0f, Vector3.one); // Start closed (_open = closed)
+        suitLogAnimator = gameObject.AddComponent<CanvasGroupAnimator>();
+        suitLogAnimator.SetImmediate(0f, Vector3.one); // Start closed (_open = closed)
 
-        _notificationsAnimator = canvas.transform.Find("Notifications/Mask/LayoutGroup").gameObject.AddComponent<CanvasGroupAnimator>();
+        notificationsAnimator = canvas.transform.Find("Notifications/Mask/LayoutGroup").gameObject.AddComponent<CanvasGroupAnimator>();
         
         GameObject notificationAudio = GameObject.Find("Player_Body/Audio_Player/NotificationAudio");
         GameObject audioSourceObject = Instantiate(notificationAudio);
         SuitLog.SetParent(audioSourceObject.transform, transform);
         oneShotSource = audioSourceObject.GetComponent<OWAudioSource>();
-        
-        descriptionField = new DescriptionField(gameObject, upperRightPromptList);
-        listNavigator = new ListNavigator(); // This is a component in CSLM but whatever...
+        listNavigator = gameObject.AddComponent<ListNavigator>();
+        upperRightPromptsRect = upperRightPromptList.GetComponent<RectTransform>();
+    }
 
-        _upperRightPromptsRect = upperRightPromptList.GetComponent<RectTransform>();
+    public static void Make(Action<MonoBehaviour> callback)
+    {
+        SuitLog.Instance.ModHelper.Events.Unity.RunWhen(() => _prefab != null, () =>
+        {
+            GameObject itemListModeGo = Instantiate(_prefab);
+            SuitLog.SetParent(itemListModeGo.transform, _commonParent);
+            SuitLogItemList itemList = itemListModeGo.GetComponent<SuitLogItemList>();
+            itemList.descriptionField = _descriptionField; // TODO: idk
+            callback.Invoke(itemList);
+        });
     }
 
     public void Open()
     {
-        _suitLogAnimator.AnimateTo(1, Vector3.one, SuitLog.OpenAnimationDuration);
+        suitLogAnimator.AnimateTo(1, Vector3.one, SuitLog.OpenAnimationDuration);
         // Make notifications slightly transparent to avoid unreadable overlapping
-        _notificationsAnimator.AnimateTo(0.35f, Vector3.one, SuitLog.OpenAnimationDuration);
+        notificationsAnimator.AnimateTo(0.35f, Vector3.one, SuitLog.OpenAnimationDuration);
         oneShotSource.PlayOneShot(AudioType.ShipLogSelectPlanet);
     }
 
     public void Close()
     {
-        _suitLogAnimator.AnimateTo(0, Vector3.one, SuitLog.CloseAnimationDuration);
-        _notificationsAnimator.AnimateTo(1, Vector3.one, SuitLog.CloseAnimationDuration);
+        suitLogAnimator.AnimateTo(0, Vector3.one, SuitLog.CloseAnimationDuration);
+        notificationsAnimator.AnimateTo(1, Vector3.one, SuitLog.CloseAnimationDuration);
         oneShotSource.PlayOneShot(AudioType.ShipLogDeselectPlanet);
 
         // TODO: Clarify that this happens, suggest only changing these fields?? Also don't touch the material?
@@ -109,9 +127,9 @@ public class SuitLogItemList : MonoBehaviour
     private void SetPromptsPosition(float positionY)
     {
         // See PromptManager: Lower the prompts when the image is displayed
-        Vector2 anchoredPosition = _upperRightPromptsRect.anchoredPosition;
+        Vector2 anchoredPosition = upperRightPromptsRect.anchoredPosition;
         anchoredPosition.y = positionY;
-        _upperRightPromptsRect.anchoredPosition = anchoredPosition;
+        upperRightPromptsRect.anchoredPosition = anchoredPosition;
     }
 
     public void UpdateListUI()
