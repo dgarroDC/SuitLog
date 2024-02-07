@@ -377,6 +377,7 @@ public class SuitLogMode : ShipLogMode
     private void HidePhoto()
     {
         itemList.photo.enabled = false;
+        itemList.photo.sprite = null;
     }
 
     public override bool AllowModeSwap()

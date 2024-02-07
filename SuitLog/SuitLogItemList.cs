@@ -32,15 +32,16 @@ public class SuitLogItemList : MonoBehaviour
     public static void CreatePrefab(ScreenPromptList upperRightPromptList)
     {
         GameObject canvas = GameObject.Find("PlayerHUD/HelmetOnUI/UICanvas/");
-        GameObject prefab = new GameObject("ItemsList", typeof(RectTransform));
-        SuitLogItemList itemList = prefab.AddComponent<SuitLogItemList>();
-        itemList.Setup(canvas, upperRightPromptList);
         
         // Parent object for all item lists
         GameObject commonParentGo = new GameObject("SuitLog", typeof(RectTransform));
         _commonParent = commonParentGo.transform;
         SuitLog.SetParent(_commonParent, canvas.transform);
         _commonParent.localPosition = new Vector3(-280, 260, 0);
+
+        GameObject prefab = new GameObject("ItemsList", typeof(RectTransform));
+        SuitLogItemList itemList = prefab.AddComponent<SuitLogItemList>();
+        itemList.Setup(canvas, upperRightPromptList);
 
         _descriptionField = new DescriptionField(_commonParent, upperRightPromptList);
 
@@ -50,7 +51,12 @@ public class SuitLogItemList : MonoBehaviour
     private void Setup(GameObject canvas, ScreenPromptList upperRightPromptList)
     {
         // TODO: Make this part of list
-        photo = GameObject.Find("PlayerHUD/HelmetOnUI/UICanvas/HUDProbeDisplay/Image").GetComponent<Image>();
+        Transform probeDisplay = canvas.transform.Find("HUDProbeDisplay");
+        GameObject photoRoot = Instantiate(probeDisplay.gameObject, transform);
+        photoRoot.transform.localPosition = probeDisplay.transform.localPosition - _commonParent.localPosition; // Offset to match the original
+        photoRoot.DestroyAllComponents<ProbeLauncherUI>();
+        photoRoot.SetActive(true);
+        photo = photoRoot.GetComponentInChildren<Image>();
 
         // Title
         nameField = SuitLog.CreateText();
@@ -111,12 +117,6 @@ public class SuitLogItemList : MonoBehaviour
         suitLogAnimator.AnimateTo(0, Vector3.one, SuitLog.CloseAnimationDuration);
         notificationsAnimator.AnimateTo(1, Vector3.one, SuitLog.CloseAnimationDuration);
         oneShotSource.PlayOneShot(AudioType.ShipLogDeselectPlanet);
-
-        // TODO: Clarify that this happens, suggest only changing these fields?? Also don't touch the material?
-        // TODO: What happens if material with snapshot is mix up with sprite???
-        // For ProbeLauncherUI
-        photo.enabled = false;
-        photo.sprite = null;
     }
     
     public void HideAllPrompts()
