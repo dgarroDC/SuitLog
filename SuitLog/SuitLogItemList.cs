@@ -10,7 +10,6 @@ public class SuitLogItemList : MonoBehaviour
 {
     private static GameObject _prefab;
     private static Transform _commonParent;
-    private static DescriptionField _descriptionField; // TODO: idk
 
     private const int TotalUIItems = 10; // Always 10, not variable like in Custom Ship Log Modes
 
@@ -42,8 +41,6 @@ public class SuitLogItemList : MonoBehaviour
         GameObject prefab = new GameObject("ItemsList", typeof(RectTransform));
         SuitLogItemList itemList = prefab.AddComponent<SuitLogItemList>();
         itemList.Setup(canvas, upperRightPromptList);
-
-        _descriptionField = new DescriptionField(_commonParent, upperRightPromptList);
 
         _prefab = prefab; // We can do it in the same frame for now, unlike CSLM
     }
@@ -90,6 +87,8 @@ public class SuitLogItemList : MonoBehaviour
         oneShotSource = audioSourceObject.GetComponent<OWAudioSource>();
         listNavigator = gameObject.AddComponent<ListNavigator>();
         upperRightPromptsRect = upperRightPromptList.GetComponent<RectTransform>();
+
+        descriptionField = DescriptionField.Create(transform, upperRightPromptList);
     }
 
     public static void Make(Action<MonoBehaviour> callback)
@@ -99,7 +98,7 @@ public class SuitLogItemList : MonoBehaviour
             GameObject itemListModeGo = Instantiate(_prefab);
             SuitLog.SetParent(itemListModeGo.transform, _commonParent);
             SuitLogItemList itemList = itemListModeGo.GetComponent<SuitLogItemList>();
-            itemList.descriptionField = _descriptionField; // TODO: idk
+            itemList.descriptionField.SetupPrompts();
             callback.Invoke(itemList);
         });
     }

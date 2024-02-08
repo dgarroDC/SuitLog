@@ -4,36 +4,40 @@ using UnityEngine.UI;
 
 namespace SuitLog
 {
-    // TODO: MonoBehaviour, Update() when enabled
-    public class DescriptionField
+    public class DescriptionField : MonoBehaviour
     {
-        private OWAudioSource _audioSource;
-        private RectTransform _descField;
-        private RectTransform _factList;
-        private ShipLogFactListItem[] _items;
-        private float _origYPos;
-        private int _displayCount = 0;
-        private bool _visible;
-        private CanvasGroupAnimator _animator;
-        private Vector3 _closeScale;
+        public OWAudioSource _audioSource;
+        public RectTransform _descField;
+        public RectTransform _factList;
+        public ShipLogFactListItem[] _items;
+        public float _origYPos;
+        public int _displayCount = 0;
+        public CanvasGroupAnimator _animator;
+        public Vector3 _closeScale;
         
-        private readonly ScreenPromptList _upperRightPromptList;
+        public ScreenPromptList _upperRightPromptList;
         private ScreenPrompt _scrollPromptGamepad;
         private ScreenPrompt _scrollPromptKbm;
 
-        internal DescriptionField(Transform suitLog, ScreenPromptList upperRightPromptList)
+        public static DescriptionField Create(Transform parent, ScreenPromptList upperRightPromptList)
         {
             // I should probably reuse ShipLogEntryDescriptionField...
             GameObject descFieldObject = new GameObject("DescriptionField");
-            _descField = descFieldObject.AddComponent<RectTransform>();
-            SuitLog.SetParent(_descField, suitLog);
+            DescriptionField descriptionField = descFieldObject.AddComponent<DescriptionField>();
+            descriptionField.Setup(parent, upperRightPromptList);
+            return descriptionField;
+        }
+        
+        private void Setup(Transform parent, ScreenPromptList upperRightPromptList) {
+            _descField = gameObject.AddComponent<RectTransform>();
+            SuitLog.SetParent(_descField, parent);
             _descField.sizeDelta = new Vector2(600, 290);
             _descField.anchoredPosition = new Vector2(0, -425); 
             _descField.anchorMin = new Vector2(0, 1);
             _descField.anchorMax = new Vector2(1, 1);
             _descField.pivot = new Vector2(0, 1);
-            descFieldObject.AddComponent<RectMask2D>();
-            descFieldObject.AddComponent<Image>().color = new Color(0.5468f, 0.816f, 0.9057f, 0.18f);
+            gameObject.AddComponent<RectMask2D>();
+            gameObject.AddComponent<Image>().color = new Color(0.5468f, 0.816f, 0.9057f, 0.18f);
 
             GameObject factListObject = new GameObject("FactList");
             _factList = factListObject.AddComponent<RectTransform>();
@@ -54,19 +58,18 @@ namespace SuitLog
                 SetupItem(i);
             }
 
-            _animator = descFieldObject.AddComponent<CanvasGroupAnimator>();
+            _animator = gameObject.AddComponent<CanvasGroupAnimator>();
             _closeScale = new Vector3(1f, 0f, 1f);
             _animator.SetImmediate(0f, _closeScale); // Start closed
-            _visible = false;
+            enabled = false;
 
             GameObject revealAudio = GameObject.Find("Ship_Body/Module_Cabin/Systems_Cabin/ShipLogPivot/ShipLog/ShipLogPivot/ShipLogCanvas/DescriptionField/TextRevealAudioSource");
             GameObject audioSourceObject = UnityEngine.Object.Instantiate(revealAudio);
-            SuitLog.SetParent(audioSourceObject.transform, descFieldObject.transform);
+            SuitLog.SetParent(audioSourceObject.transform, gameObject.transform);
             _audioSource = audioSourceObject.GetComponent<OWAudioSource>();
             _audioSource.SetTrack(OWAudioMixer.TrackName.Player); // Not sure if we need this
 
             _upperRightPromptList = upperRightPromptList;
-            SetupPrompts();
         }
 
         private void SetupItem(int i)
@@ -138,7 +141,6 @@ namespace SuitLog
 
         public void UpdateScroll()
         {
-            if (!_visible) return; // This case shouldn't be possible because of _isEntryMenuOpen = false
             bool usingGamepad = OWInput.UsingGamepad();
             float scroll;
             if (usingGamepad)
@@ -172,8 +174,9 @@ namespace SuitLog
         {
             bool usingGamepad = OWInput.UsingGamepad();
             bool scrollable = GetMaxScroll() < 0f; // Is this ok? 
-            _scrollPromptGamepad.SetVisibility(_visible && scrollable && usingGamepad);
-            _scrollPromptKbm.SetVisibility(_visible && scrollable && !usingGamepad);
+            // The _visible part is probably unnecessary?
+            _scrollPromptGamepad.SetVisibility( scrollable && usingGamepad);
+            _scrollPromptKbm.SetVisibility(scrollable && !usingGamepad);
         }
 
         public void HideAllPrompts()
@@ -184,9 +187,9 @@ namespace SuitLog
 
         public void Open()
         {
-            if (!_visible)
+            if (!enabled)
             {
-                _visible = true;
+                enabled = true;
                 _animator.AnimateTo( 1,  Vector3.one , SuitLog.OpenAnimationDuration);
                 Locator.GetPromptManager().AddScreenPrompt(_scrollPromptGamepad, _upperRightPromptList, TextAnchor.MiddleRight);
                 Locator.GetPromptManager().AddScreenPrompt(_scrollPromptKbm, _upperRightPromptList, TextAnchor.MiddleRight);
@@ -197,9 +200,9 @@ namespace SuitLog
 
         public void Close()
         {
-            if (_visible)
+            if (enabled)
             {
-                _visible = false;
+                enabled = false;
                 _animator.AnimateTo( 0, _closeScale, SuitLog.CloseAnimationDuration);
                 if (_audioSource.isPlaying)
                 {
