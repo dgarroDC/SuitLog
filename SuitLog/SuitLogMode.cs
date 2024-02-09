@@ -304,6 +304,7 @@ public class SuitLogMode : ShipLogMode
         itemList.DescriptionFieldClose();
         LoadAstroObjectsMenu();
         HidePhoto();
+        HideQuestionMark();
         _displayedEntryItems.Clear(); // TODO: Why?
         _isEntryMenuOpen = false;
         _oneShotSource.PlayOneShot(AudioType.ShipLogDeselectPlanet);
@@ -352,7 +353,7 @@ public class SuitLogMode : ShipLogMode
             }
             else
             {
-                HidePhoto();
+                ShowQuestionMark();
             }
         }
         else
@@ -360,19 +361,32 @@ public class SuitLogMode : ShipLogMode
             // In MapModeMode, this would happen at OpenEntryMenu
             itemList.DescriptionFieldGetNextItem()
                 .DisplayText(UITextLibrary.GetString(UITextType.LogNoDiscoveriesPrompt));
+            ShowQuestionMark();
         }
     }
     
     private void ShowPhoto(ShipLogEntry entry)
     {
-        itemList.photo.enabled = true;
+        HideQuestionMark();
+        itemList.photo.gameObject.SetActive(true);
         itemList.photo.sprite = entry.GetSprite();
     }
 
     private void HidePhoto()
     {
-        itemList.photo.enabled = false;
+        itemList.photo.gameObject.SetActive(false);
         itemList.photo.sprite = null;
+    }
+
+    private void ShowQuestionMark()
+    {
+        HidePhoto();
+        itemList.questionMark.gameObject.SetActive(true);
+    }
+
+    private void HideQuestionMark()
+    {
+        itemList.questionMark.gameObject.SetActive(false);
     }
 
     public override bool AllowModeSwap()

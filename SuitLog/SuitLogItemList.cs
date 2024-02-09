@@ -16,6 +16,7 @@ public class SuitLogItemList : MonoBehaviour
     public OWAudioSource oneShotSource; // Well this is used for the custom modes I guess
     public Text nameField;
     public Image photo;
+    public Text questionMark;
     public DescriptionField descriptionField;
 
     public int selectedIndex;
@@ -50,13 +51,27 @@ public class SuitLogItemList : MonoBehaviour
 
     private void Setup(GameObject canvas, ScreenPromptList upperRightPromptList)
     {
-        // TODO: Make this part of list
+        // Photo & Question Mark
         Transform probeDisplay = canvas.transform.Find("HUDProbeDisplay");
         GameObject photoRoot = Instantiate(probeDisplay.gameObject, transform);
         photoRoot.transform.localPosition = probeDisplay.transform.localPosition - _commonParent.localPosition; // Offset to match the original
         photoRoot.DestroyAllComponents<ProbeLauncherUI>();
         photoRoot.SetActive(true);
         photo = photoRoot.GetComponentInChildren<Image>();
+        photo.enabled = true;
+        photo.gameObject.SetActive(false);
+        questionMark = SuitLog.CreateText();
+        questionMark.name = "QuestionMark";
+        RectTransform questionMarkTransform = questionMark.transform as RectTransform;
+        SuitLog.SetParent(questionMarkTransform, photoRoot.transform);
+        questionMarkTransform!.SetAsFirstSibling(); // Bellow photo, like in Ship Log
+        questionMarkTransform.localPosition = photo.transform.localPosition;
+        questionMarkTransform.pivot = new Vector2(0.5f, 0.5f);
+        questionMark.alignment = TextAnchor.MiddleCenter;
+        questionMark.fontSize = 220;
+        questionMark.text = "?";
+        questionMark.color = new Color(1, 0.6f, 0); // Same as Ship Log's, although it looks different
+        questionMark.gameObject.SetActive(false);
 
         // Title
         nameField = SuitLog.CreateText();
@@ -199,7 +214,7 @@ public class SuitLogItemList : MonoBehaviour
         }
         
         // TODO: Clarify this in docs
-        if (photo.enabled)
+        if (photo.gameObject.activeSelf || questionMark.gameObject.activeSelf)
         {
             SetPromptsPosition(-250f);
         }
