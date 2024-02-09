@@ -28,6 +28,9 @@ public class SuitLogItemList : MonoBehaviour
     public CanvasGroupAnimator suitLogAnimator;
     public CanvasGroupAnimator notificationsAnimator;
 
+    private bool _open;
+    private bool _descriptionFieldShouldBeOpen;
+
     public static void CreatePrefab(ScreenPromptList upperRightPromptList)
     {
         GameObject canvas = GameObject.Find("PlayerHUD/HelmetOnUI/UICanvas/");
@@ -105,17 +108,35 @@ public class SuitLogItemList : MonoBehaviour
 
     public void Open()
     {
-        suitLogAnimator.AnimateTo(1, Vector3.one, SuitLog.OpenAnimationDuration);
-        // Make notifications slightly transparent to avoid unreadable overlapping
-        notificationsAnimator.AnimateTo(0.35f, Vector3.one, SuitLog.OpenAnimationDuration);
-        oneShotSource.PlayOneShot(AudioType.ShipLogSelectPlanet);
+        if (!_open)
+        {
+            suitLogAnimator.AnimateTo(1, Vector3.one, SuitLog.OpenAnimationDuration);
+            // Make notifications slightly transparent to avoid unreadable overlapping
+            notificationsAnimator.AnimateTo(0.35f, Vector3.one, SuitLog.OpenAnimationDuration);
+            oneShotSource.PlayOneShot(AudioType.ShipLogSelectPlanet);
+
+            if (_descriptionFieldShouldBeOpen)
+            {
+                // TODO: Doc this
+                descriptionField.Open();
+            }
+
+            _open = true;
+        }
     }
 
     public void Close()
     {
-        suitLogAnimator.AnimateTo(0, Vector3.one, SuitLog.CloseAnimationDuration);
-        notificationsAnimator.AnimateTo(1, Vector3.one, SuitLog.CloseAnimationDuration);
-        oneShotSource.PlayOneShot(AudioType.ShipLogDeselectPlanet);
+        if (_open)
+        {
+            suitLogAnimator.AnimateTo(0, Vector3.one, SuitLog.CloseAnimationDuration);
+            notificationsAnimator.AnimateTo(1, Vector3.one, SuitLog.CloseAnimationDuration);
+            oneShotSource.PlayOneShot(AudioType.ShipLogDeselectPlanet);
+            
+            descriptionField.Close();
+
+            _open = false;
+        }
     }
     
     public void HideAllPrompts()
@@ -229,6 +250,22 @@ public class SuitLogItemList : MonoBehaviour
     {
         return descriptionField.GetNextItem();
     }
+    
+    public void DescriptionFieldOpen()
+    {
+        if (_open)
+        {
+            // The field is only open when the list is open (avoid prompts and Update the field)
+            descriptionField.Open();
+        }
+        _descriptionFieldShouldBeOpen = true;
+    }
+    
+    public void DescriptionFieldClose()
+    {
+        descriptionField.Close();
+        _descriptionFieldShouldBeOpen = false;
+    }
 
     public int GetIndexUI(int index)
     {
@@ -239,6 +276,4 @@ public class SuitLogItemList : MonoBehaviour
         int uiIndex = index - itemIndexOnTop;
         return uiIndex < TotalUIItems ? uiIndex : -1;
     }
-    
-    // TODO: Desc field -> open, close, update?
 }

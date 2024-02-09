@@ -254,11 +254,6 @@ public class SuitLogMode : ShipLogMode
             CloseEntryMenu();
         }
 
-        if (_isEntryMenuOpen)
-        {
-            itemList.descriptionField.Update();
-        }
-
         UpdatePromptsVisibility();
     }
 
@@ -294,7 +289,7 @@ public class SuitLogMode : ShipLogMode
     {
         LoadEntriesMenu();
         itemList.selectedIndex = 0;
-        itemList.descriptionField.Open();
+        itemList.DescriptionFieldOpen();
         UpdateSelectedEntry();
         _isEntryMenuOpen = true;
         _oneShotSource.PlayOneShot(AudioType.ShipLogSelectPlanet);
@@ -306,7 +301,7 @@ public class SuitLogMode : ShipLogMode
         {
             MarkAsRead(itemList.selectedIndex);
         }
-        itemList.descriptionField.Close();
+        itemList.DescriptionFieldClose();
         LoadAstroObjectsMenu();
         HidePhoto();
         _displayedEntryItems.Clear(); // TODO: Why?
