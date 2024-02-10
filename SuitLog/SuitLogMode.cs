@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using OWML.Common;
+using SuitLog.API;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace SuitLog;
 
 public class SuitLogMode : ShipLogMode
 {
-    public SuitLogItemList itemList;
+    public ItemListWrapper itemList;
     public ShipLogMapMode shipLogMap;
 
     private ScreenPromptList _upperRightPromptList;
@@ -82,7 +84,7 @@ public class SuitLogMode : ShipLogMode
     
     private void LoadAstroObjectsMenu()
     {
-        itemList.selectedIndex = 0; // Unnecessary statement probably...
+        itemList.SetSelectedIndex(0); // Unnecessary statement probably...
         List<Tuple<string, bool, bool, bool>> items = new();
         _displayedAtroObjectIds.Clear();
         foreach ((string astroObjectId, ShipLogAstroObject astroObject) in _shipLogAstroObjects)
@@ -99,7 +101,7 @@ public class SuitLogMode : ShipLogMode
 
                 if (astroObjectId == _selectedAstroObjectID)
                 {
-                    itemList.selectedIndex = items.Count; // Next element to insert
+                    itemList.SetSelectedIndex(items.Count); // Next element to insert
                 }
 
                 items.Add(new Tuple<string, bool, bool, bool>(
@@ -112,7 +114,7 @@ public class SuitLogMode : ShipLogMode
             }
         }
 
-        itemList.contentsItems = items; // TODO: API
+        itemList.SetItems(items);
         itemList.SetName("Suit Log");
     }
 
@@ -141,7 +143,7 @@ public class SuitLogMode : ShipLogMode
             }
         }
 
-        itemList.contentsItems = items; // TODO: API
+        itemList.SetItems(items);
         itemList.SetName(selectedAstroObject.GetName());
     }
 
@@ -213,13 +215,13 @@ public class SuitLogMode : ShipLogMode
 
     public override void UpdateMode()
     {
-        int prevSelectedIndex = itemList.selectedIndex;
+        int prevSelectedIndex = itemList.GetSelectedIndex();
         int selectionChange = itemList.UpdateList();
         if (selectionChange != 0)
         {
             if (!_isEntryMenuOpen)
             {
-                _selectedAstroObjectID = _displayedAtroObjectIds[itemList.selectedIndex];
+                _selectedAstroObjectID = _displayedAtroObjectIds[itemList.GetSelectedIndex()];
             }
             else
             {
@@ -265,7 +267,7 @@ public class SuitLogMode : ShipLogMode
         bool showMarkOnHUDPrompt = false;
         if (_isEntryMenuOpen && _displayedEntryItems.Count > 0)
         {
-            ShipLogEntry entry = _displayedEntryItems[itemList.selectedIndex];
+            ShipLogEntry entry = _displayedEntryItems[itemList.GetSelectedIndex()];
             if (CanEntryBeMarkedOnHUD(entry))
             {
                 showMarkOnHUDPrompt = true;
@@ -288,7 +290,7 @@ public class SuitLogMode : ShipLogMode
     private void OpenEntryMenu()
     {
         LoadEntriesMenu();
-        itemList.selectedIndex = 0;
+        itemList.SetSelectedIndex(0);
         itemList.DescriptionFieldOpen();
         UpdateSelectedEntry();
         _isEntryMenuOpen = true;
@@ -299,7 +301,7 @@ public class SuitLogMode : ShipLogMode
     {
         if (_displayedEntryItems.Count > 0)
         {
-            MarkAsRead(itemList.selectedIndex);
+            MarkAsRead(itemList.GetSelectedIndex());
         }
         itemList.DescriptionFieldClose();
         LoadAstroObjectsMenu();
@@ -314,10 +316,9 @@ public class SuitLogMode : ShipLogMode
     {
         // TODO: setting to disable mark on read
         // TODO: Test this changed in all scenarios
-        Tuple<string,bool,bool,bool> item = itemList.contentsItems[index];
-        if (item.Item3)
+        ShipLogEntry entry = _displayedEntryItems[index];
+        if (entry.HasUnreadFacts())
         {
-            ShipLogEntry entry = _displayedEntryItems[index];
             entry.MarkAsRead();
             LoadEntriesMenu(); // TODO: Maybe move this out, not necessary on close entry menu...
         }
@@ -333,7 +334,7 @@ public class SuitLogMode : ShipLogMode
         itemList.DescriptionFieldClear();
         if (_displayedEntryItems.Count > 0)
         {
-            ShipLogEntry entry = _displayedEntryItems[itemList.selectedIndex];
+            ShipLogEntry entry = _displayedEntryItems[itemList.GetSelectedIndex()];
             List<ShipLogFact> facts = entry.GetFactsForDisplay();
             foreach (ShipLogFact fact in facts)
             {
@@ -368,25 +369,27 @@ public class SuitLogMode : ShipLogMode
     private void ShowPhoto(ShipLogEntry entry)
     {
         HideQuestionMark();
-        itemList.photo.gameObject.SetActive(true);
-        itemList.photo.sprite = entry.GetSprite();
+        Image photo = itemList.GetPhoto();
+        photo.gameObject.SetActive(true);
+        photo.sprite = entry.GetSprite();
     }
 
     private void HidePhoto()
     {
-        itemList.photo.gameObject.SetActive(false);
-        itemList.photo.sprite = null;
+        Image photo = itemList.GetPhoto();
+        photo.gameObject.SetActive(false);
+        photo.sprite = null;
     }
 
     private void ShowQuestionMark()
     {
         HidePhoto();
-        itemList.questionMark.gameObject.SetActive(true);
+        itemList.GetQuestionMark().gameObject.SetActive(true);
     }
 
     private void HideQuestionMark()
     {
-        itemList.questionMark.gameObject.SetActive(false);
+        itemList.GetQuestionMark().gameObject.SetActive(false);
     }
 
     public override bool AllowModeSwap()

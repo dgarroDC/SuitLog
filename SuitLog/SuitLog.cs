@@ -1,4 +1,5 @@
 ﻿using OWML.ModHelper;
+using SuitLog.API;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,7 +13,7 @@ namespace SuitLog
 
         private bool _setupDone;
         private bool _open;
-        private SuitLogItemList _itemlist;
+        private SuitLogItemList _itemlist; // TODO: Remove! What to use as mode audio?
         private SuitLogMode _suitLogMode;
 
         private ToolModeSwapper _toolModeSwapper;
@@ -57,7 +58,7 @@ namespace SuitLog
             {
                 _itemlist = (SuitLogItemList) itemList;
                 _suitLogMode = _itemlist.gameObject.AddComponent<SuitLogMode>();
-                _suitLogMode.itemList = _itemlist;
+                _suitLogMode.itemList = new ItemListWrapper(new SuitLogAPI(), _itemlist);
                 _suitLogMode.shipLogMap = mapMode;
                 _suitLogMode.name = nameof(SuitLogMode);
                 _suitLogMode.Initialize(null, _upperRightPromptList, _itemlist.oneShotSource);

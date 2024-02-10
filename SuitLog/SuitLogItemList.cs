@@ -20,7 +20,7 @@ public class SuitLogItemList : MonoBehaviour
     public DescriptionField descriptionField;
 
     public int selectedIndex;
-    public List<Text> uiItems; // TODO: ShipLogEntryListItem??
+    public List<ShipLogEntryListItem> uiItems;
     public List<Tuple<string, bool, bool, bool>> contentsItems = new();
     public ListNavigator listNavigator;
 
@@ -83,7 +83,7 @@ public class SuitLogItemList : MonoBehaviour
         titleRect.anchoredPosition = new Vector2(0, 55);
         titleRect.pivot = new Vector2(0, 1);
 
-        uiItems = new List<Text>();
+        uiItems = new List<ShipLogEntryListItem>();
         for (int i = 0; i < TotalUIItems; i++)
         {
             Text text = SuitLog.CreateText();
@@ -91,7 +91,11 @@ public class SuitLogItemList : MonoBehaviour
             SuitLog.SetParent(textTransform, transform);
             textTransform.anchoredPosition = new Vector2(0, -i * 35);
             textTransform.pivot = new Vector2(0, 1);
-            uiItems.Add(text);
+            // We use this component just for better CSLM compatibility, we only use the text field and set alpha manually
+            ShipLogEntryListItem item = text.gameObject.AddComponent<ShipLogEntryListItem>();
+            item._nameField = text;
+            item.Init();
+            uiItems.Add(item);
         }
             
         suitLogAnimator = gameObject.AddComponent<CanvasGroupAnimator>();
@@ -101,7 +105,7 @@ public class SuitLogItemList : MonoBehaviour
         
         GameObject notificationAudio = GameObject.Find("Player_Body/Audio_Player/NotificationAudio");
         GameObject audioSourceObject = Instantiate(notificationAudio);
-        SuitLog.SetParent(audioSourceObject.transform, transform);
+        SuitLog.SetParent(audioSourceObject.transform, transform); // TODO: Use the common parent instead? Just one...
         oneShotSource = audioSourceObject.GetComponent<OWAudioSource>();
         listNavigator = gameObject.AddComponent<ListNavigator>();
         upperRightPromptsRect = upperRightPromptList.GetComponent<RectTransform>();
@@ -173,7 +177,7 @@ public class SuitLogItemList : MonoBehaviour
         int firstItem = selectedIndex <= 4 ? 0 : selectedIndex - 4;
         for (int i = 0; i < TotalUIItems; i++)
         {
-            Text text = uiItems[i];
+            ShipLogEntryListItem uiItem= uiItems[i];
             int itemIndex = firstItem + i;
             if (itemIndex < contentsItems.Count)
             {
@@ -194,22 +198,22 @@ public class SuitLogItemList : MonoBehaviour
                 if (itemIndex != selectedIndex)
                 {
                     // Transparent non-selected items
-                    text.canvasRenderer.SetAlpha(0.5f);
+                    uiItem._nameField.canvasRenderer.SetAlpha(0.5f);
                     // Space for the select arrow icon
                     displayText = "  " + displayText;
                 }
                 else
                 {
-                    text.canvasRenderer.SetAlpha(1f);
+                    uiItem._nameField.canvasRenderer.SetAlpha(1f);
                     // Select arrow icon
                     displayText = "<color=#FFA431>></color> " + displayText;
                 }
-                text.text = displayText;
-                text.gameObject.SetActive(true);
+                uiItem._nameField.text = displayText;
+                uiItem.gameObject.SetActive(true);
             }
             else
             {
-                text.gameObject.SetActive(false);
+                uiItem.gameObject.SetActive(false);
             }
         }
         
