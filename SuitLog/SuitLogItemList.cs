@@ -8,7 +8,7 @@ namespace SuitLog;
 // A lot of code is copied from Custom Ship Log Modes (CSLM) ShipLogItemList
 public class SuitLogItemList : MonoBehaviour
 {
-    private static GameObject _prefab;
+    private static GameObject _prefab; // This is reset on scene load
     private static Transform _commonParent;
 
     private const int TotalUIItems = 10; // Always 10, not variable like in Custom Ship Log Modes
@@ -23,8 +23,6 @@ public class SuitLogItemList : MonoBehaviour
     public List<ShipLogEntryListItem> uiItems;
     public List<Tuple<string, bool, bool, bool>> contentsItems = new();
     public ListNavigator listNavigator;
-
-    public RectTransform upperRightPromptsRect;
 
     public CanvasGroupAnimator suitLogAnimator;
     public CanvasGroupAnimator notificationsAnimator;
@@ -42,8 +40,15 @@ public class SuitLogItemList : MonoBehaviour
         SuitLog.SetParent(_commonParent, canvas.transform);
         _commonParent.localPosition = new Vector3(-280, 260, 0);
 
+        // idk why cloning this, maybe just use the same...
+        GameObject notificationAudio = GameObject.Find("Player_Body/Audio_Player/NotificationAudio");
+        GameObject audioSourceObject = Instantiate(notificationAudio);
+        SuitLog.SetParent(audioSourceObject.transform, _commonParent);
+        OWAudioSource oneShotSource = audioSourceObject.GetComponent<OWAudioSource>();
+
         GameObject prefab = new GameObject("ItemsList", typeof(RectTransform));
         SuitLogItemList itemList = prefab.AddComponent<SuitLogItemList>();
+        itemList.oneShotSource = oneShotSource;
         itemList.Setup(canvas, upperRightPromptList);
 
         _prefab = prefab; // We can do it in the same frame for now, unlike CSLM
@@ -102,13 +107,7 @@ public class SuitLogItemList : MonoBehaviour
         suitLogAnimator.SetImmediate(0f, Vector3.one); // Start closed (_open = closed)
 
         notificationsAnimator = canvas.transform.Find("Notifications/Mask/LayoutGroup").gameObject.AddComponent<CanvasGroupAnimator>();
-        
-        GameObject notificationAudio = GameObject.Find("Player_Body/Audio_Player/NotificationAudio");
-        GameObject audioSourceObject = Instantiate(notificationAudio);
-        SuitLog.SetParent(audioSourceObject.transform, transform); // TODO: Use the common parent instead? Just one...
-        oneShotSource = audioSourceObject.GetComponent<OWAudioSource>();
         listNavigator = gameObject.AddComponent<ListNavigator>();
-        upperRightPromptsRect = upperRightPromptList.GetComponent<RectTransform>();
 
         descriptionField = DescriptionField.Create(transform, upperRightPromptList);
     }
@@ -121,6 +120,7 @@ public class SuitLogItemList : MonoBehaviour
             SuitLog.SetParent(itemListModeGo.transform, _commonParent);
             SuitLogItemList itemList = itemListModeGo.GetComponent<SuitLogItemList>();
             itemList.descriptionField.SetupPrompts();
+            SuitLog.Instance.ItemLists.Add(itemList);
             callback.Invoke(itemList);
         });
     }
@@ -156,19 +156,6 @@ public class SuitLogItemList : MonoBehaviour
 
             _open = false;
         }
-    }
-    
-    public void HideAllPrompts()
-    {
-        descriptionField.HideAllPrompts();
-    }
-
-    private void SetPromptsPosition(float positionY)
-    {
-        // See PromptManager: Lower the prompts when the image is displayed
-        Vector2 anchoredPosition = upperRightPromptsRect.anchoredPosition;
-        anchoredPosition.y = positionY;
-        upperRightPromptsRect.anchoredPosition = anchoredPosition;
     }
 
     public void UpdateListUI()
@@ -215,16 +202,6 @@ public class SuitLogItemList : MonoBehaviour
             {
                 uiItem.gameObject.SetActive(false);
             }
-        }
-        
-        // TODO: Clarify this in docs
-        if (photo.gameObject.activeSelf || questionMark.gameObject.activeSelf)
-        {
-            SetPromptsPosition(-250f);
-        }
-        else
-        {
-            SetPromptsPosition(0f);
         }
     }
 

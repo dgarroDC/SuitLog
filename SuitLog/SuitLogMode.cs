@@ -75,13 +75,20 @@ public class SuitLogMode : ShipLogMode
 
     public override void EnterMode(string entryID = "", List<ShipLogFact> revealQueue = null)
     {
+        itemList.Open();
         LoadAstroObjectsMenu();
-        
+        if (_displayedAtroObjectIds.Count == 0)
+        {
+            itemList.DescriptionFieldOpen();
+            itemList.DescriptionFieldClear();
+            itemList.DescriptionFieldGetNextItem()
+                .DisplayText("Suit Log is empty.");
+        }
+
         Locator.GetPromptManager().AddScreenPrompt(_viewEntriesPrompt, _upperRightPromptList, TextAnchor.MiddleRight);
         Locator.GetPromptManager().AddScreenPrompt(_closeEntriesPrompt, _upperRightPromptList, TextAnchor.MiddleRight);
         Locator.GetPromptManager().AddScreenPrompt(_markOnHUDPrompt, _upperRightPromptList, TextAnchor.MiddleRight);
     }
-    
     private void LoadAstroObjectsMenu()
     {
         itemList.SetSelectedIndex(0); // Unnecessary statement probably...
@@ -197,7 +204,9 @@ public class SuitLogMode : ShipLogMode
         {
             CloseEntryMenu();
         }
-        
+        itemList.DescriptionFieldClose(); // Just in case it was open because empty Suit Log
+        itemList.Close();
+
         Locator.GetPromptManager().RemoveScreenPrompt(_viewEntriesPrompt);
         Locator.GetPromptManager().RemoveScreenPrompt(_closeEntriesPrompt);
         Locator.GetPromptManager().RemoveScreenPrompt(_markOnHUDPrompt);
@@ -280,13 +289,6 @@ public class SuitLogMode : ShipLogMode
         _markOnHUDPrompt.SetVisibility(showMarkOnHUDPrompt);
     }
 
-    public void HideAllPrompts()
-    {
-        _viewEntriesPrompt.SetVisibility(false);
-        _closeEntriesPrompt.SetVisibility(false);
-        _markOnHUDPrompt.SetVisibility(false);
-    }
-
     private void OpenEntryMenu()
     {
         LoadEntriesMenu();
@@ -304,7 +306,7 @@ public class SuitLogMode : ShipLogMode
             MarkAsRead(itemList.GetSelectedIndex());
         }
         itemList.DescriptionFieldClose();
-        LoadAstroObjectsMenu();
+        LoadAstroObjectsMenu(); // No need to check for empty Suit Log for the description field
         HidePhoto();
         HideQuestionMark();
         _displayedEntryItems.Clear(); // TODO: Why?

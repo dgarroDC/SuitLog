@@ -1,4 +1,5 @@
-﻿using OWML.ModHelper;
+﻿using System.Collections.Generic;
+using OWML.ModHelper;
 using SuitLog.API;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,14 +12,17 @@ namespace SuitLog
     {
         public static SuitLog Instance;
 
+        public List<SuitLogItemList> ItemLists = new(); // Kinda weird...
+
         private bool _setupDone;
         private bool _open;
-        private SuitLogItemList _itemlist; // TODO: Remove! What to use as mode audio?
         private SuitLogMode _suitLogMode;
 
         private ToolModeSwapper _toolModeSwapper;
- 
+
+        private OWAudioSource _oneShotSource;
         private ScreenPromptList _upperRightPromptList;
+        private RectTransform _upperRightPromptsRect;
         private ScreenPrompt _openPrompt;
         private ScreenPrompt _closePrompt;
 
@@ -52,16 +56,18 @@ namespace SuitLog
 
             _toolModeSwapper = Locator.GetToolModeSwapper();
             _upperRightPromptList = Locator.GetPromptManager().GetScreenPromptList(PromptPosition.UpperRight);
+            _upperRightPromptsRect =  _upperRightPromptList.GetComponent<RectTransform>();
 
             SuitLogItemList.CreatePrefab(_upperRightPromptList);
             SuitLogItemList.Make(itemList =>
             {
-                _itemlist = (SuitLogItemList) itemList;
-                _suitLogMode = _itemlist.gameObject.AddComponent<SuitLogMode>();
-                _suitLogMode.itemList = new ItemListWrapper(new SuitLogAPI(), _itemlist);
+                _oneShotSource = ((SuitLogItemList)itemList).oneShotSource; // This is shared
+                
+                _suitLogMode = itemList.gameObject.AddComponent<SuitLogMode>();
+                _suitLogMode.itemList = new ItemListWrapper(new SuitLogAPI(), itemList);
                 _suitLogMode.shipLogMap = mapMode;
                 _suitLogMode.name = nameof(SuitLogMode);
-                _suitLogMode.Initialize(null, _upperRightPromptList, _itemlist.oneShotSource);
+                _suitLogMode.Initialize(null, _upperRightPromptList, _oneShotSource);
 
                 SetupPrompts();
                 _setupDone = true;
@@ -72,10 +78,19 @@ namespace SuitLog
         {
             if (!_setupDone) return;
             // TODO: Add option to pause when helmet is fully on, but not if end times is playing
-            if (Locator.GetSceneMenuManager().pauseMenu.IsOpen())
+            if (IsPauseMenuOpen())
             {
                 // Setup is done, we can reference the prompts
-                HideAllPrompts();
+                if (_open)
+                {
+                    // Really hacky...
+                    SetPromptsPosition(-1000000);
+                }
+                else
+                {
+                    // It's the only one that could be visible while closed, so just hide it (and that way we don't affect other prompts, just in case...)
+                    _openPrompt.SetVisibility(false);
+                }
                 return;
             }
 
@@ -101,26 +116,24 @@ namespace SuitLog
             UpdatePromptsVisibility();
         }
 
+        public static bool IsPauseMenuOpen()
+        {
+            return Locator.GetSceneMenuManager().pauseMenu.IsOpen();
+        }
+        
+        private void SetPromptsPosition(float positionY)
+        {
+            // See PromptManager: Lower the prompts when the image is displayed
+            Vector2 anchoredPosition = _upperRightPromptsRect.anchoredPosition;
+            anchoredPosition.y = positionY;
+            _upperRightPromptsRect.anchoredPosition = anchoredPosition;
+        }
+
         private void OpenSuitLog()
         {
             _suitLogMode.EnterMode();
-
-            // TODO: Move this check to map mode check if available?
-            if (_itemlist.contentsItems.Count > 0)
-            {
-                _itemlist.Open();
-                OWInput.ChangeInputMode(InputMode.None);
-                _open = true;
-            }
-            else
-            {
-                _suitLogMode.ExitMode();
-                // TODO: What about custom modes??? Open custom mode if map mode empty, if no custom mode available, display this notif??
-                // TODO: Translation
-                // This case shouldn't be possible in vanilla because the fact TH_VILLAGE_X1 is always revealed, this was added for New Horizons
-                NotificationData notification = new NotificationData(NotificationTarget.Player, "SUIT LOG IS EMPTY");
-                NotificationManager.SharedInstance.PostNotification(notification);
-            }
+            OWInput.ChangeInputMode(InputMode.None);
+            _open = true;
         }
  
         private void CloseSuitLog()
@@ -128,7 +141,7 @@ namespace SuitLog
             _suitLogMode.ExitMode();
             OWInput.RestorePreviousInputs(); // This should always be Character
             _open = false;
-            _itemlist.Close();
+            SetPromptsPosition(0); // It's possible that it's still lowered when closing the suit log
         }
 
         private bool IsSuitLogOpenable()
@@ -162,14 +175,28 @@ namespace SuitLog
         {
             _openPrompt.SetVisibility(IsSuitLogOpenable());
             _closePrompt.SetVisibility(_open && _suitLogMode.AllowCancelInput()); // Maybe _open not needed???
-        }
 
-        private void HideAllPrompts()
-        {
-            _openPrompt.SetVisibility(false);
-            _closePrompt.SetVisibility(false);
-            _itemlist.HideAllPrompts(); // TODO: How to handle this with custom modes??? Shared desc field?
-            _suitLogMode.HideAllPrompts(); // TODO: Suggest other mods do the same! API utility?? (listener??)
+            if (_open)
+            {
+                bool shouldLowerPrompts = false;
+                foreach (SuitLogItemList itemList in ItemLists)
+                {
+                    if (itemList != null && (itemList.photo.gameObject.activeSelf || itemList.questionMark.gameObject.activeSelf))
+                    { 
+                        shouldLowerPrompts = true;
+                        break;
+                    }
+                }
+                if (shouldLowerPrompts)
+                {
+                    SetPromptsPosition(-250f);
+                }
+                else
+                {
+                    SetPromptsPosition(0f);
+                }
+            }
+            // Don't handle close here, because probe launcher could change it, reset on close
         }
 
         internal static void SetParent(Transform child, Transform parent)

@@ -174,7 +174,6 @@ namespace SuitLog
         {
             bool usingGamepad = OWInput.UsingGamepad();
             bool scrollable = GetMaxScroll() < 0f; // Is this ok? 
-            // The _visible part is probably unnecessary?
             _scrollPromptGamepad.SetVisibility( scrollable && usingGamepad);
             _scrollPromptKbm.SetVisibility(scrollable && !usingGamepad);
         }
