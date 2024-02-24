@@ -27,6 +27,7 @@ namespace SuitLog
         private ToolModeSwapper _toolModeSwapper;
 
         private OWAudioSource _oneShotSource;
+        private ScreenPromptList _centerPromptList;
         private ScreenPromptList _upperRightPromptList;
         private RectTransform _upperRightPromptsRect;
         private ScreenPrompt _openPrompt;
@@ -66,6 +67,7 @@ namespace SuitLog
             _open = false;
 
             _toolModeSwapper = Locator.GetToolModeSwapper();
+            _centerPromptList = Locator.GetPromptManager().GetScreenPromptList(PromptPosition.BottomCenter); // Don't use the center one
             _upperRightPromptList = Locator.GetPromptManager().GetScreenPromptList(PromptPosition.UpperRight);
             _upperRightPromptsRect =  _upperRightPromptList.GetComponent<RectTransform>();
 
@@ -217,9 +219,9 @@ namespace SuitLog
             _openPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.OpenSuitLog), "Open Suit Log");
             _closePrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.CloseSuitLog), "Close Suit Log");
             _modeSwapPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.SwapMode), ""); // The text is updated
-            Locator.GetPromptManager().AddScreenPrompt(_openPrompt, PromptPosition.UpperRight);
-            Locator.GetPromptManager().AddScreenPrompt(_closePrompt, PromptPosition.UpperRight);
-            Locator.GetPromptManager().AddScreenPrompt(_modeSwapPrompt, PromptPosition.UpperRight);
+            Locator.GetPromptManager().AddScreenPrompt(_openPrompt, _upperRightPromptList, TextAnchor.MiddleRight);
+            Locator.GetPromptManager().AddScreenPrompt(_closePrompt, _upperRightPromptList, TextAnchor.MiddleRight);
+            Locator.GetPromptManager().AddScreenPrompt(_modeSwapPrompt, _upperRightPromptList, TextAnchor.MiddleRight);
         }
 
         private void UpdatePromptsVisibility(ShipLogMode nextMode)
@@ -273,7 +275,7 @@ namespace SuitLog
         
         private void InitializeMode(ShipLogMode mode)
         {
-            mode.Initialize(null, _upperRightPromptList, _oneShotSource);
+            mode.Initialize(_centerPromptList, _upperRightPromptList, _oneShotSource);
         }
         
         private void ChangeMode(ShipLogMode enteringMode)
