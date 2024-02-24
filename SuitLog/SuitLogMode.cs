@@ -9,6 +9,8 @@ namespace SuitLog;
 
 public class SuitLogMode : ShipLogMode
 {
+    public const string Name = "Suit Log";
+
     public ItemListWrapper itemList;
     public ShipLogMapMode shipLogMap;
 
@@ -96,7 +98,7 @@ public class SuitLogMode : ShipLogMode
         _displayedAtroObjectIds.Clear();
         foreach ((string astroObjectId, ShipLogAstroObject astroObject) in _shipLogAstroObjects)
         {
-            astroObject.OnEnterComputer();
+            astroObject.OnEnterComputer(); // Maybe it makes more sense to do it OnEnterComputer of the mode?
             astroObject.UpdateState();
             if (astroObject.IsVisible()) // Exploded, Rumored and Hidden with !_invisibleWhenHidden
             {
@@ -122,7 +124,7 @@ public class SuitLogMode : ShipLogMode
         }
 
         itemList.SetItems(items);
-        itemList.SetName("Suit Log");
+        itemList.SetName(Name);
     }
 
     private void LoadEntriesMenu()

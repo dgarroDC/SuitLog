@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using OWML.Common;
 using OWML.ModHelper;
 using SuitLog.API;
 using UnityEngine;
@@ -13,6 +16,9 @@ namespace SuitLog
         public static SuitLog Instance;
 
         public List<SuitLogItemList> ItemLists = new(); // Kinda weird...
+
+        private Dictionary<ShipLogMode, Tuple<Func<bool>, Func<string>>> _modes = new();
+        private ShipLogMode _currentMode;
 
         private bool _setupDone;
         private bool _open;
@@ -35,12 +41,12 @@ namespace SuitLog
             ModHelper.HarmonyHelper.AddPrefix<BaseInputManager>("ChangeInputMode", typeof(SuitLog), nameof(ChangeInputModePrefixPatch));
             // Setup after ShipLogController.LateInitialize to find all ShipLogAstroObject added by New Horizons in ShipLogMapMode.Initialize postfix
             ModHelper.HarmonyHelper.AddPostfix<ShipLogController>("LateInitialize", typeof(SuitLog), nameof(SetupPatch));
-            LoadManager.OnCompleteSceneLoad += OnCompleteSceneLoad;
+            LoadManager.OnStartSceneLoad += OnStartSceneLoad;
         }
 
-        private void OnCompleteSceneLoad(OWScene scene, OWScene loadScene)
+        private void OnStartSceneLoad(OWScene scene, OWScene loadScene)
         {
-            // This should be called before SetupPatch
+            // This should be called before SetupPatch, see also considerations in CSLM
            _setupDone = false;
         }
 
@@ -58,19 +64,30 @@ namespace SuitLog
             _upperRightPromptList = Locator.GetPromptManager().GetScreenPromptList(PromptPosition.UpperRight);
             _upperRightPromptsRect =  _upperRightPromptList.GetComponent<RectTransform>();
 
+            ISuitLogAPI API = new SuitLogAPI();
             SuitLogItemList.CreatePrefab(_upperRightPromptList);
-            SuitLogItemList.Make(itemList =>
+            API.ItemListMake(itemList =>
             {
                 _oneShotSource = ((SuitLogItemList)itemList).oneShotSource; // This is shared
                 
                 _suitLogMode = itemList.gameObject.AddComponent<SuitLogMode>();
-                _suitLogMode.itemList = new ItemListWrapper(new SuitLogAPI(), itemList);
+                _suitLogMode.itemList = new ItemListWrapper(API, itemList);
                 _suitLogMode.shipLogMap = mapMode;
                 _suitLogMode.name = nameof(SuitLogMode);
-                _suitLogMode.Initialize(null, _upperRightPromptList, _oneShotSource);
+                InitializeMode(_suitLogMode); // Don't add it to _modes to force it being the first
+                _currentMode = _suitLogMode;
 
                 SetupPrompts();
                 _setupDone = true;
+                
+                // Initialize all already added modes, even disabled ones
+                foreach (ShipLogMode mode in _modes.Keys)
+                {
+                    if (mode != null)
+                    {
+                        InitializeMode(mode);
+                    }
+                }
             });
         }
 
@@ -103,13 +120,13 @@ namespace SuitLog
             }
             else if (_open)
             {
-                if ((_suitLogMode.AllowCancelInput() && Input.IsNewlyPressed(Input.Action.CloseSuitLog)) || !CanSuitLogRemainOpen())
+                if ((_currentMode.AllowCancelInput() && Input.IsNewlyPressed(Input.Action.CloseSuitLog)) || !CanSuitLogRemainOpen())
                 {
                     CloseSuitLog();
                 }
                 else
                 {
-                    _suitLogMode.UpdateMode();
+                    _currentMode.UpdateMode();
                 }
             }
 
@@ -131,14 +148,24 @@ namespace SuitLog
 
         private void OpenSuitLog()
         {
-            _suitLogMode.EnterMode();
-            OWInput.ChangeInputMode(InputMode.None);
             _open = true;
+            OWInput.ChangeInputMode(InputMode.None);
+
+            foreach ((ShipLogMode shipLogMode, _) in GetAvailableNamedModes())
+            {
+                shipLogMode.OnEnterComputer();
+            }
+            _currentMode.EnterMode();
         }
  
         private void CloseSuitLog()
         {
-            _suitLogMode.ExitMode();
+            _currentMode.ExitMode();
+            foreach ((ShipLogMode shipLogMode, _) in GetAvailableNamedModes())
+            {
+                shipLogMode.OnExitComputer();
+            }
+ 
             OWInput.RestorePreviousInputs(); // This should always be Character
             _open = false;
             SetPromptsPosition(0); // It's possible that it's still lowered when closing the suit log
@@ -174,7 +201,7 @@ namespace SuitLog
         private void UpdatePromptsVisibility()
         {
             _openPrompt.SetVisibility(IsSuitLogOpenable());
-            _closePrompt.SetVisibility(_open && _suitLogMode.AllowCancelInput()); // Maybe _open not needed???
+            _closePrompt.SetVisibility(_open && _currentMode.AllowCancelInput()); // Maybe _open not needed???
 
             if (_open)
             {
@@ -197,6 +224,40 @@ namespace SuitLog
                 }
             }
             // Don't handle close here, because probe launcher could change it, reset on close
+        }
+
+        public void AddMode(ShipLogMode mode, Func<bool> isEnabledSupplier, Func<string> nameSupplier)
+        {
+            if (_modes.ContainsKey(mode))
+            {
+                ModHelper.Console.WriteLine("Mode " + mode + " already added, replacing suppliers...", MessageType.Info);
+            }
+            _modes[mode] = new Tuple<Func<bool>, Func<string>>(isEnabledSupplier, nameSupplier);
+
+            if (!_setupDone)
+            {
+                InitializeMode(mode);
+            }
+        }
+        
+        private void InitializeMode(ShipLogMode mode)
+        {
+            mode.Initialize(null, _upperRightPromptList, _oneShotSource);
+        }
+        
+        public List<Tuple<ShipLogMode, string>> GetAvailableNamedModes()
+        {
+            // TODO: Cache per update?
+            // Probably GetCustomModes() not needed in this mod
+            List<Tuple<ShipLogMode, string>> modes = _modes
+                .Where(mode => mode.Key != null && mode.Value.Item1.Invoke())
+                .Select(mode => new Tuple<ShipLogMode, string>(mode.Key, mode.Value.Item2.Invoke()))
+                .OrderBy(mode => mode.Item2)
+                .ToList();
+
+            modes.Insert(0, new Tuple<ShipLogMode, string>(_suitLogMode, SuitLogMode.Name)); 
+            
+            return modes;
         }
 
         internal static void SetParent(Transform child, Transform parent)

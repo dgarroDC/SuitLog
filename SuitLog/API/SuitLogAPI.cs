@@ -9,7 +9,7 @@ public class SuitLogAPI : ISuitLogAPI
 {
     public void AddMode(ShipLogMode mode, Func<bool> isEnabledSupplier, Func<string> nameSupplier)
     {
-        //SuitLog.Instance.AddMode(mode, isEnabledSupplier, nameSupplier); TODO
+        SuitLog.Instance.AddMode(mode, isEnabledSupplier, nameSupplier);
     }
     
     public void ItemListMake(Action<MonoBehaviour> callback)
