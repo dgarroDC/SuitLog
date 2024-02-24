@@ -31,6 +31,7 @@ namespace SuitLog
         private RectTransform _upperRightPromptsRect;
         private ScreenPrompt _openPrompt;
         private ScreenPrompt _closePrompt;
+        private ScreenPrompt _modeSwapPrompt;
 
         internal const float OpenAnimationDuration = 0.13f;
         internal const float CloseAnimationDuration = 0.3f;
@@ -42,6 +43,10 @@ namespace SuitLog
             // Setup after ShipLogController.LateInitialize to find all ShipLogAstroObject added by New Horizons in ShipLogMapMode.Initialize postfix
             ModHelper.HarmonyHelper.AddPostfix<ShipLogController>("LateInitialize", typeof(SuitLog), nameof(SetupPatch));
             LoadManager.OnStartSceneLoad += OnStartSceneLoad;
+        }
+
+        public override object GetApi() {
+            return new SuitLogAPI();
         }
 
         private void OnStartSceneLoad(OWScene scene, OWScene loadScene)
@@ -64,7 +69,7 @@ namespace SuitLog
             _upperRightPromptList = Locator.GetPromptManager().GetScreenPromptList(PromptPosition.UpperRight);
             _upperRightPromptsRect =  _upperRightPromptList.GetComponent<RectTransform>();
 
-            ISuitLogAPI API = new SuitLogAPI();
+            ISuitLogAPI API = GetApi() as ISuitLogAPI;
             SuitLogItemList.CreatePrefab(_upperRightPromptList);
             API.ItemListMake(itemList =>
             {
@@ -111,6 +116,7 @@ namespace SuitLog
                 return;
             }
 
+            ShipLogMode nextMode = null;
             if (IsSuitLogOpenable())
             {
                 if (Input.IsNewlyPressed(Input.Action.OpenSuitLog))
@@ -127,10 +133,25 @@ namespace SuitLog
                 else
                 {
                     _currentMode.UpdateMode();
+                    List<Tuple<ShipLogMode, string>> availableNamedModes = GetAvailableNamedModes();
+                    int currentModeIndex = availableNamedModes.FindIndex(m => m.Item1 == _currentMode);
+                    if (_currentMode.AllowModeSwap() && currentModeIndex >= 0 && availableNamedModes.Count >= 2) // idk about the >= 0, from CSLM...
+                    {
+                        nextMode = availableNamedModes[(currentModeIndex + 1) % availableNamedModes.Count].Item1;
+                        if (nextMode != null && Input.IsNewlyPressed(Input.Action.SwapMode))
+                        {
+                            ChangeMode(nextMode);
+                        }
+                    }
+                    if (_modes.ContainsKey(_currentMode) && !_modes[_currentMode].Item1.Invoke())
+                    {
+                        // Same CSLM trap case
+                        ChangeMode(_suitLogMode);
+                    }
                 }
             }
 
-            UpdatePromptsVisibility();
+            UpdatePromptsVisibility(nextMode); // The mode could be one frame "delayed"
         }
 
         public static bool IsPauseMenuOpen()
@@ -148,10 +169,10 @@ namespace SuitLog
 
         private void OpenSuitLog()
         {
-            _open = true;
             OWInput.ChangeInputMode(InputMode.None);
+            _open = true;
 
-            foreach ((ShipLogMode shipLogMode, _) in GetAvailableNamedModes())
+            foreach ((ShipLogMode shipLogMode, _) in GetAvailableNamedModes()) // TODO: Also disabled?
             {
                 shipLogMode.OnEnterComputer();
             }
@@ -160,6 +181,7 @@ namespace SuitLog
  
         private void CloseSuitLog()
         {
+            _oneShotSource.PlayOneShot(AudioType.ShipLogDeselectPlanet); // Modes aren't supposed to play sound on exit, so we do it here
             _currentMode.ExitMode();
             foreach ((ShipLogMode shipLogMode, _) in GetAvailableNamedModes())
             {
@@ -194,21 +216,30 @@ namespace SuitLog
             // TODO: Translations
             _openPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.OpenSuitLog), "Open Suit Log");
             _closePrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.CloseSuitLog), "Close Suit Log");
+            _modeSwapPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.SwapMode), ""); // The text is updated
             Locator.GetPromptManager().AddScreenPrompt(_openPrompt, PromptPosition.UpperRight);
             Locator.GetPromptManager().AddScreenPrompt(_closePrompt, PromptPosition.UpperRight);
+            Locator.GetPromptManager().AddScreenPrompt(_modeSwapPrompt, PromptPosition.UpperRight);
         }
 
-        private void UpdatePromptsVisibility()
+        private void UpdatePromptsVisibility(ShipLogMode nextMode)
         {
             _openPrompt.SetVisibility(IsSuitLogOpenable());
             _closePrompt.SetVisibility(_open && _currentMode.AllowCancelInput()); // Maybe _open not needed???
+            _modeSwapPrompt.SetVisibility(_open && nextMode != null);
+            if (nextMode != null)
+            {
+                List<Tuple<ShipLogMode, string>> availableNamedModes = GetAvailableNamedModes();
+                string nextModeName = availableNamedModes.Find(m => m.Item1 == nextMode).Item2;
+                _modeSwapPrompt.SetText(nextModeName);
+            }
 
             if (_open)
             {
                 bool shouldLowerPrompts = false;
                 foreach (SuitLogItemList itemList in ItemLists)
                 {
-                    if (itemList != null && (itemList.photo.gameObject.activeSelf || itemList.questionMark.gameObject.activeSelf))
+                    if (itemList != null && itemList.IsOpen && (itemList.photo.gameObject.activeSelf || itemList.questionMark.gameObject.activeSelf))
                     { 
                         shouldLowerPrompts = true;
                         break;
@@ -245,6 +276,15 @@ namespace SuitLog
             mode.Initialize(null, _upperRightPromptList, _oneShotSource);
         }
         
+        private void ChangeMode(ShipLogMode enteringMode)
+        {
+            ShipLogMode leavingMode = _currentMode;
+            string focusedEntryID = leavingMode.GetFocusedEntryID();
+            leavingMode.ExitMode();
+            _currentMode = enteringMode;
+            _currentMode.EnterMode(focusedEntryID);
+        }
+
         public List<Tuple<ShipLogMode, string>> GetAvailableNamedModes()
         {
             // TODO: Cache per update?

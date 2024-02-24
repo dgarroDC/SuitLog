@@ -13,6 +13,8 @@ public class SuitLogItemList : MonoBehaviour
 
     private const int TotalUIItems = 10; // Always 10, not variable like in Custom Ship Log Modes
 
+    public bool IsOpen;
+
     public OWAudioSource oneShotSource; // Well this is used for the custom modes I guess
     public Text nameField;
     public Image photo;
@@ -27,7 +29,6 @@ public class SuitLogItemList : MonoBehaviour
     public CanvasGroupAnimator suitLogAnimator;
     public CanvasGroupAnimator notificationsAnimator;
 
-    private bool _open;
     private bool _descriptionFieldShouldBeOpen;
 
     public static void CreatePrefab(ScreenPromptList upperRightPromptList)
@@ -127,12 +128,11 @@ public class SuitLogItemList : MonoBehaviour
 
     public void Open()
     {
-        if (!_open)
+        if (!IsOpen)
         {
             suitLogAnimator.AnimateTo(1, Vector3.one, SuitLog.OpenAnimationDuration);
             // Make notifications slightly transparent to avoid unreadable overlapping
             notificationsAnimator.AnimateTo(0.35f, Vector3.one, SuitLog.OpenAnimationDuration);
-            oneShotSource.PlayOneShot(AudioType.ShipLogSelectPlanet);
 
             if (_descriptionFieldShouldBeOpen)
             {
@@ -140,21 +140,20 @@ public class SuitLogItemList : MonoBehaviour
                 descriptionField.Open();
             }
 
-            _open = true;
+            IsOpen = true;
         }
     }
 
     public void Close()
     {
-        if (_open)
+        if (IsOpen)
         {
             suitLogAnimator.AnimateTo(0, Vector3.one, SuitLog.CloseAnimationDuration);
             notificationsAnimator.AnimateTo(1, Vector3.one, SuitLog.CloseAnimationDuration);
-            oneShotSource.PlayOneShot(AudioType.ShipLogDeselectPlanet);
             
             descriptionField.Close();
 
-            _open = false;
+            IsOpen = false;
         }
     }
 
@@ -249,7 +248,7 @@ public class SuitLogItemList : MonoBehaviour
     
     public void DescriptionFieldOpen()
     {
-        if (_open)
+        if (IsOpen)
         {
             // The field is only open when the list is open (avoid prompts and Update the field)
             descriptionField.Open();

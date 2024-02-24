@@ -15,7 +15,8 @@ public static class Input
         ListUp,
         ListDown,
         ScrollFactsKbm,
-        ScrollFactsGamepad
+        ScrollFactsGamepad,
+        SwapMode
     }
 
     private static List<IInputCommands> GetInputCommands(Action action)
@@ -42,6 +43,8 @@ public static class Input
                 return new List<IInputCommands>{InputLibrary.toolOptionY};
             case Action.ScrollFactsGamepad:
                 return new List<IInputCommands>{InputLibrary.scrollLogText};
+            case Action.SwapMode:
+                return new List<IInputCommands>{InputLibrary.swapShipLogMode};
         }
 
         return null;

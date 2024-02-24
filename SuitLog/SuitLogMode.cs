@@ -78,6 +78,8 @@ public class SuitLogMode : ShipLogMode
     public override void EnterMode(string entryID = "", List<ShipLogFact> revealQueue = null)
     {
         itemList.Open();
+        _oneShotSource.PlayOneShot(AudioType.ShipLogSelectPlanet);
+
         LoadAstroObjectsMenu();
         if (_displayedAtroObjectIds.Count == 0)
         {
@@ -261,10 +263,12 @@ public class SuitLogMode : ShipLogMode
         else if (!_isEntryMenuOpen && _displayedAtroObjectIds.Count > 0 && Input.IsNewlyPressed(Input.Action.ViewEntries))
         {
             OpenEntryMenu();
+            _oneShotSource.PlayOneShot(AudioType.ShipLogSelectPlanet);
         }
         else if (_isEntryMenuOpen && Input.IsNewlyPressed(Input.Action.CloseEntries))
         {
             CloseEntryMenu();
+            _oneShotSource.PlayOneShot(AudioType.ShipLogDeselectPlanet); // Only play the sound here
         }
 
         UpdatePromptsVisibility();
@@ -298,7 +302,6 @@ public class SuitLogMode : ShipLogMode
         itemList.DescriptionFieldOpen();
         UpdateSelectedEntry();
         _isEntryMenuOpen = true;
-        _oneShotSource.PlayOneShot(AudioType.ShipLogSelectPlanet);
     }
 
     private void CloseEntryMenu()
@@ -313,7 +316,7 @@ public class SuitLogMode : ShipLogMode
         HideQuestionMark();
         _displayedEntryItems.Clear(); // TODO: Why?
         _isEntryMenuOpen = false;
-        _oneShotSource.PlayOneShot(AudioType.ShipLogDeselectPlanet);
+        // Don't play the sound here, to avoid playing on close mode
     }
 
     private void MarkAsRead(int index)
