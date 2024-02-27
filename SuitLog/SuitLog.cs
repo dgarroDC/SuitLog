@@ -22,7 +22,10 @@ namespace SuitLog
 
         private bool _setupDone;
         private bool _open;
+
         private SuitLogMode _suitLogMode;
+        private ModeSelectorMode _modeSelectorMode;
+        private ShipLogMode _requestedChangeMode;
 
         private ToolModeSwapper _toolModeSwapper;
 
@@ -32,6 +35,7 @@ namespace SuitLog
         private RectTransform _upperRightPromptsRect;
         private ScreenPrompt _openPrompt;
         private ScreenPrompt _closePrompt;
+        private ScreenPrompt _modeSelectorPrompt;
         private ScreenPrompt _modeSwapPrompt;
 
         internal const float OpenAnimationDuration = 0.13f;
@@ -84,17 +88,26 @@ namespace SuitLog
                 InitializeMode(_suitLogMode); // Don't add it to _modes to force it being the first
                 _currentMode = _suitLogMode;
 
-                SetupPrompts();
-                _setupDone = true;
-                
-                // Initialize all already added modes, even disabled ones
-                foreach (ShipLogMode mode in _modes.Keys)
+                // Maybe both could share the same item lists? I don't know, this seems more consistent
+                API.ItemListMake(itemList2 =>
                 {
-                    if (mode != null)
+                    _modeSelectorMode = itemList2.gameObject.AddComponent<ModeSelectorMode>();
+                    _modeSelectorMode.itemList = new ItemListWrapper(API, itemList2);
+                    _modeSelectorMode.name = nameof(ModeSelectorMode);
+                    InitializeMode(_modeSelectorMode); // Obviously not added to _modes
+                    
+                    SetupPrompts();
+                    _setupDone = true;
+
+                    // Initialize all already added modes, even disabled ones
+                    foreach (ShipLogMode mode in _modes.Keys)
                     {
-                        InitializeMode(mode);
+                        if (mode != null)
+                        {
+                            InitializeMode(mode);
+                        }
                     }
-                }
+                });
             });
         }
 
@@ -135,20 +148,34 @@ namespace SuitLog
                 else
                 {
                     _currentMode.UpdateMode();
-                    List<Tuple<ShipLogMode, string>> availableNamedModes = GetAvailableNamedModes();
-                    int currentModeIndex = availableNamedModes.FindIndex(m => m.Item1 == _currentMode);
-                    if (_currentMode.AllowModeSwap() && currentModeIndex >= 0 && availableNamedModes.Count >= 2) // idk about the >= 0, from CSLM...
+                    // Kinda like UpdatePromptsVisibility+UpdateChangeMode from CSLM but simpler?
+                    if (_requestedChangeMode != null)
                     {
-                        nextMode = availableNamedModes[(currentModeIndex + 1) % availableNamedModes.Count].Item1;
-                        if (nextMode != null && Input.IsNewlyPressed(Input.Action.SwapMode))
-                        {
-                            ChangeMode(nextMode);
-                        }
+                        ChangeMode(_requestedChangeMode);
+                        _requestedChangeMode = null;
                     }
-                    if (_modes.ContainsKey(_currentMode) && !_modes[_currentMode].Item1.Invoke())
+                    else
                     {
-                        // Same CSLM trap case
-                        ChangeMode(_suitLogMode);
+                        List<Tuple<ShipLogMode, string>> availableNamedModes = GetAvailableNamedModes();
+                        int currentModeIndex = availableNamedModes.FindIndex(m => m.Item1 == _currentMode);  // idk about the >= 0, from CSLM... (although not affecting selector there?)
+                        if (_currentMode.AllowModeSwap() && currentModeIndex >= 0 && availableNamedModes.Count >= 2)
+                        {
+                            nextMode = availableNamedModes[(currentModeIndex + 1) % availableNamedModes.Count].Item1; // Calculate here to use it for prompt visibility?
+                            if (Input.IsNewlyPressed(Input.Action.OpenModeSelector))
+                            {
+                                _modeSelectorMode.SetGoBackMode(_currentMode);
+                                ChangeMode(_modeSelectorMode);
+                            }
+                            else if (Input.IsNewlyPressed(Input.Action.SwapMode))
+                            {
+                                ChangeMode(nextMode);
+                            }
+                        }
+                        else if (_modes.ContainsKey(_currentMode) && !_modes[_currentMode].Item1.Invoke())
+                        {
+                            // Same CSLM trap case
+                            ChangeMode(_suitLogMode);
+                        }
                     }
                 }
             }
@@ -218,9 +245,11 @@ namespace SuitLog
             // TODO: Translations
             _openPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.OpenSuitLog), "Open Suit Log");
             _closePrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.CloseSuitLog), "Close Suit Log");
+            _modeSelectorPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.OpenModeSelector), ModeSelectorMode.Name);
             _modeSwapPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.SwapMode), ""); // The text is updated
             Locator.GetPromptManager().AddScreenPrompt(_openPrompt, _upperRightPromptList, TextAnchor.MiddleRight);
             Locator.GetPromptManager().AddScreenPrompt(_closePrompt, _upperRightPromptList, TextAnchor.MiddleRight);
+            Locator.GetPromptManager().AddScreenPrompt(_modeSelectorPrompt, _upperRightPromptList, TextAnchor.MiddleRight);
             Locator.GetPromptManager().AddScreenPrompt(_modeSwapPrompt, _upperRightPromptList, TextAnchor.MiddleRight);
         }
 
@@ -228,6 +257,7 @@ namespace SuitLog
         {
             _openPrompt.SetVisibility(IsSuitLogOpenable());
             _closePrompt.SetVisibility(_open && _currentMode.AllowCancelInput()); // Maybe _open not needed???
+            _modeSelectorPrompt.SetVisibility(_open && nextMode != null);
             _modeSwapPrompt.SetVisibility(_open && nextMode != null);
             if (nextMode != null)
             {
@@ -285,6 +315,15 @@ namespace SuitLog
             leavingMode.ExitMode();
             _currentMode = enteringMode;
             _currentMode.EnterMode(focusedEntryID);
+        }
+        
+        public void RequestChangeMode(ShipLogMode mode)
+        {
+            // Same considerations as CSLM, although there isn't a postfix here so not sure, just in case...
+            if (_requestedChangeMode == null)
+            {
+                _requestedChangeMode = mode;
+            } 
         }
 
         public List<Tuple<ShipLogMode, string>> GetAvailableNamedModes()

@@ -77,6 +77,7 @@ public class SuitLogMode : ShipLogMode
 
     public override void EnterMode(string entryID = "", List<ShipLogFact> revealQueue = null)
     {
+        TODO use entryID, maybe keep the entry menu open on close and find there? Nah, check map mode
         itemList.Open();
         _oneShotSource.PlayOneShot(AudioType.ShipLogSelectPlanet);
 

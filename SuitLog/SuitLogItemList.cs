@@ -136,7 +136,6 @@ public class SuitLogItemList : MonoBehaviour
 
             if (_descriptionFieldShouldBeOpen)
             {
-                // TODO: Doc this
                 descriptionField.Open();
             }
 

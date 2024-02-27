@@ -16,7 +16,10 @@ public static class Input
         ListDown,
         ScrollFactsKbm,
         ScrollFactsGamepad,
-        SwapMode
+        SwapMode,
+        OpenModeSelector,
+        CloseModeSelector,
+        SelectMode
     }
 
     private static List<IInputCommands> GetInputCommands(Action action)
@@ -45,6 +48,12 @@ public static class Input
                 return new List<IInputCommands>{InputLibrary.scrollLogText};
             case Action.SwapMode:
                 return new List<IInputCommands>{InputLibrary.swapShipLogMode};
+            case Action.OpenModeSelector:
+                return new List<IInputCommands>{InputLibrary.flashlight};
+            case Action.CloseModeSelector:
+                return new List<IInputCommands>{InputLibrary.cancel};
+            case Action.SelectMode:
+                return new List<IInputCommands>{InputLibrary.interact};
         }
 
         return null;
