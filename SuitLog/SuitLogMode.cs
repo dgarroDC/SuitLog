@@ -77,12 +77,27 @@ public class SuitLogMode : ShipLogMode
 
     public override void EnterMode(string entryID = "", List<ShipLogFact> revealQueue = null)
     {
-        TODO use entryID, maybe keep the entry menu open on close and find there? Nah, check map mode
         itemList.Open();
         _oneShotSource.PlayOneShot(AudioType.ShipLogSelectPlanet);
 
         LoadAstroObjectsMenu();
-        if (_displayedAtroObjectIds.Count == 0)
+        if (entryID.Length > 0)
+        {
+            ShipLogEntry entry = _shipLogManager.GetEntry(entryID);
+            if (entry != null)
+            {
+                string astroObjectID = entry.GetAstroObjectID();
+                // Don't check _displayedAtroObjectIds (vanilla parity, DoesAstroObjectExist)
+                if (_shipLogAstroObjects.ContainsKey(astroObjectID))
+                {
+                    _selectedAstroObjectID = astroObjectID;
+                    OpenEntryMenu(entryID);
+                }
+            }
+        }
+        
+        // Check _isEntryMenuOpen because we can focus in not visible astro object (vanilla parity)
+        if (!_isEntryMenuOpen && _displayedAtroObjectIds.Count == 0)
         {
             itemList.DescriptionFieldOpen();
             itemList.DescriptionFieldClear();
@@ -150,7 +165,7 @@ public class SuitLogMode : ShipLogMode
                     entry.HasUnreadFacts(),
                     entry.HasMoreToExplore()
                 ));
-                // TODO: Move to another method: Load + Display!
+                //  TODO: Move to another method: Load + Display!
                 _displayedEntryItems.Add(entry);
             }
         }
@@ -296,10 +311,19 @@ public class SuitLogMode : ShipLogMode
         _markOnHUDPrompt.SetVisibility(showMarkOnHUDPrompt);
     }
 
-    private void OpenEntryMenu()
+    private void OpenEntryMenu(string focusedEntryID = "")
     {
         LoadEntriesMenu();
-        itemList.SetSelectedIndex(0);
+        int entryFocus = 0;
+        if (focusedEntryID.Length > 0)
+        {
+            entryFocus = _displayedEntryItems.FindIndex(e => e.GetID().Equals(focusedEntryID));
+            if (entryFocus == -1)
+            {
+                entryFocus = 0;
+            }
+        }
+        itemList.SetSelectedIndex(entryFocus);
         itemList.DescriptionFieldOpen();
         UpdateSelectedEntry();
         _isEntryMenuOpen = true;
@@ -412,6 +436,10 @@ public class SuitLogMode : ShipLogMode
 
     public override string GetFocusedEntryID()
     {
+        if (_isEntryMenuOpen && _displayedEntryItems.Count > 0)
+        {
+            return _displayedEntryItems[itemList.GetSelectedIndex()].GetID();
+        }
         return "";
     }
 }

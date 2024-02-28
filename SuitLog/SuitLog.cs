@@ -158,7 +158,12 @@ namespace SuitLog
                     {
                         List<Tuple<ShipLogMode, string>> availableNamedModes = GetAvailableNamedModes();
                         int currentModeIndex = availableNamedModes.FindIndex(m => m.Item1 == _currentMode);  // idk about the >= 0, from CSLM... (although not affecting selector there?)
-                        if (_currentMode.AllowModeSwap() && currentModeIndex >= 0 && availableNamedModes.Count >= 2)
+                        if (currentModeIndex == -1 && _currentMode != _modeSelectorMode)
+                        {
+                            // Same CSLM trap case, although the check is different, but the index seems enough
+                            ChangeMode(_suitLogMode);
+                        }
+                        else if (_currentMode.AllowModeSwap() && availableNamedModes.Count >= 2)
                         {
                             nextMode = availableNamedModes[(currentModeIndex + 1) % availableNamedModes.Count].Item1; // Calculate here to use it for prompt visibility?
                             if (Input.IsNewlyPressed(Input.Action.OpenModeSelector))
@@ -170,11 +175,6 @@ namespace SuitLog
                             {
                                 ChangeMode(nextMode);
                             }
-                        }
-                        else if (_modes.ContainsKey(_currentMode) && !_modes[_currentMode].Item1.Invoke())
-                        {
-                            // Same CSLM trap case
-                            ChangeMode(_suitLogMode);
                         }
                     }
                 }
