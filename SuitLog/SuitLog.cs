@@ -297,7 +297,7 @@ namespace SuitLog
             }
             _modes[mode] = new Tuple<Func<bool>, Func<string>>(isEnabledSupplier, nameSupplier);
 
-            if (!_setupDone)
+            if (_setupDone)
             {
                 InitializeMode(mode);
             }
