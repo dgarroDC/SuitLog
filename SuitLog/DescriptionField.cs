@@ -70,6 +70,8 @@ namespace SuitLog
             _audioSource.SetTrack(OWAudioMixer.TrackName.Player); // Not sure if we need this
 
             _upperRightPromptList = upperRightPromptList;
+            
+            Clear(); // Just to hide the default texts
         }
 
         private void SetupItem(int i)
