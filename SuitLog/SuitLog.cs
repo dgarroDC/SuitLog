@@ -319,7 +319,7 @@ namespace SuitLog
                             closePromptString = "Loka Geimbúninguraskrá";
                             break;
                         default:
-                            suitLogName = "Ship Log";
+                            suitLogName = "Suit Log";
                             openPromptString = "Open Suit Log";
                             closePromptString = "Close Suit Log";
                             break;
