@@ -9,7 +9,10 @@ namespace SuitLog;
 
 public class SuitLogMode : ShipLogMode
 {
-    public const string Name = "Suit Log";
+    public static string Name()
+    {
+        return SuitLog.Instance.suitLogName;
+    }
 
     public ItemListWrapper itemList;
     public ShipLogMapMode shipLogMap;
@@ -142,7 +145,7 @@ public class SuitLogMode : ShipLogMode
         }
 
         itemList.SetItems(items);
-        itemList.SetName(Name);
+        itemList.SetName(Name());
     }
 
     private void LoadEntriesMenu()

@@ -240,7 +240,7 @@ namespace SuitLog
                    _toolModeSwapper._firstPersonManipulator._focusedRepairReceiver == null;
         }
 
-        public string shipLogName;
+        public string suitLogName;
         private void SetupPrompts()
         {
             // Establish these two vars
@@ -251,57 +251,57 @@ namespace SuitLog
             switch (PlayerData.GetSavedLanguage())
             {
                 case TextTranslation.Language.FRENCH:
-                    shipLogName = "Journal de combinaison";
+                    suitLogName = "Journal de combinaison";
                     openPromptString = "Ouvrir le journal de combinaison";
                     closePromptString = "Fermer le journal de combinaison";
                     break;
                 case TextTranslation.Language.GERMAN:
-                    shipLogName = "Anzugslog";
+                    suitLogName = "Anzugslog";
                     openPromptString = "Anzugslog öffnen";
                     closePromptString = "Anzugslog schließen";
                     break;
                 case TextTranslation.Language.ITALIAN:
-                    shipLogName = "Registro della tuta";
+                    suitLogName = "Registro della tuta";
                     openPromptString = "Apri il registro della tuta";
                     closePromptString = "Chiudi il registro della tuta";
                     break;
                 case TextTranslation.Language.JAPANESE:
-                    shipLogName = "宇宙服の航行記録";
+                    suitLogName = "宇宙服の航行記録";
                     openPromptString = "宇宙服の航行記録を開く";
                     closePromptString = "宇宙服の航行記録を閉じる";
                     break;
                 case TextTranslation.Language.KOREAN:
-                    shipLogName = "우주복 일지";
+                    suitLogName = "우주복 일지";
                     openPromptString = "우주복 일지 열기";
                     closePromptString = "우주복 일지 닫기";
                     break;
                 case TextTranslation.Language.POLISH:
-                    shipLogName = "Dziennik skafander";
+                    suitLogName = "Dziennik skafander";
                     openPromptString = "Otwórz dziennik skafander";
                     closePromptString = "Zamknij dziennik skafander";
                     break;
                 case TextTranslation.Language.PORTUGUESE_BR:
-                    shipLogName = "Diário de Traje";
+                    suitLogName = "Diário de Traje";
                     openPromptString = "Abrir o Diário de Traje";
                     closePromptString = "Fechar o Diário de Traje";
                     break;
                 case TextTranslation.Language.RUSSIAN:
-                    shipLogName = "Скафа́ндржурнал";
+                    suitLogName = "Скафа́ндржурнал";
                     openPromptString = "Открыть скафа́ндржурнал";
                     closePromptString = "Закрыть скафа́ндржурнал";
                     break;
                 case TextTranslation.Language.CHINESE_SIMPLE:
-                    shipLogName = "太空服日志";
+                    suitLogName = "太空服日志";
                     openPromptString = "打开太空服日志";
                     closePromptString = "关闭太空服日志";
                     break;
                 case TextTranslation.Language.SPANISH_LA:
-                    shipLogName = "Registro del traje";
+                    suitLogName = "Registro del traje";
                     openPromptString = "Abrir registro del traje";
                     closePromptString = "Cerrar registro del traje";
                     break;
                 case TextTranslation.Language.TURKISH:
-                    shipLogName = "Elbisesi Kayıtları";
+                    suitLogName = "Elbisesi Kayıtları";
                     openPromptString = "Elbisesi Kayıtları Aç";
                     closePromptString = "Yakın Elbisesi Kayıtları";
                     break;
@@ -309,21 +309,22 @@ namespace SuitLog
                     switch (PlayerData.GetSavedLanguage().ToString())
                     {
                         case "Czech":
-                            shipLogName = "Skafandr deník";
+                            suitLogName = "Skafandr deník";
                             openPromptString = "Otevři skafandr deník";
                             closePromptString = "Zavři skafandr deník";
                             break;
                         case "Íslenska":
-                            shipLogName = "Geimbúninguraskrá";
+                            suitLogName = "Geimbúninguraskrá";
                             openPromptString = "Opna Geimbúninguraskrá";
                             closePromptString = "Loka Geimbúninguraskrá";
                             break;
                         default:
-                            shipLogName = "Ship Log";
+                            suitLogName = "Ship Log";
                             openPromptString = "Open Suit Log";
                             closePromptString = "Close Suit Log";
                             break;
                     }
+                    break;
             }
             
             // Setup prompts
@@ -420,7 +421,7 @@ namespace SuitLog
                 .OrderBy(mode => mode.Item2)
                 .ToList();
 
-            modes.Insert(0, new Tuple<ShipLogMode, string>(_suitLogMode, SuitLogMode.Name)); 
+            modes.Insert(0, new Tuple<ShipLogMode, string>(_suitLogMode, SuitLogMode.Name())); 
             
             return modes;
         }
