@@ -318,6 +318,11 @@ namespace SuitLog
                             openPromptString = "Opna Geimbúninguraskrá";
                             closePromptString = "Loka Geimbúninguraskrá";
                             break;
+                        case "Andalûh":
+                            suitLogName = "Rehîttro der trahe";
+                            openPromptString = "Abrîh rehîttro der trahe";
+                            closePromptString = "Çerrâh rehîttro der trahe";
+                            break;
                         default:
                             suitLogName = "Suit Log";
                             openPromptString = "Open Suit Log";
