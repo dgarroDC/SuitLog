@@ -323,6 +323,11 @@ namespace SuitLog
                             openPromptString = "Abrîh rehîttro der trahe";
                             closePromptString = "Çerrâh rehîttro der trahe";
                             break;
+                        case "Euskara":
+                            suitLogName = "Espazio-jantziaren erregistroa";
+                            openPromptString = "Espazio-jantziaren erregistroa ikusi";
+                            closePromptString = "Espazio-jantziaren erregistroa itxi";
+                            break;
                         default:
                             suitLogName = "Suit Log";
                             openPromptString = "Open Suit Log";
