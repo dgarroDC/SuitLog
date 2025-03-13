@@ -25,6 +25,11 @@ Please, I'd be happy to receive any suggestions and bug reports on [GitHub](http
 * [Archaeologist Achievement Helper](https://outerwildsmods.com/mods/archaeologistachievementhelper/): The mods are compatible and if you run the game with Suit Log and this helper mod, the later would add the *"There's more to explore here."* mark and text to entries to both the Ship Log and Suit Log. However, the *"Show all missing facts"* optional feature only applies to the Ship Logs and the Suit Log would be unaffected by this.
 * [New Horizons](https://outerwildsmods.com/mods/newhorizons/): The mods are fully compatible, opening the Suit Log shows planets added by addons of New Horizons. The menu list only displays the planets of the current star system (this is the same behaviour that the Ship Log has in New Horizons). Entries added to the vanilla Outer Wilds planets are also listed. The Interstellar Mode that New Horizons adds to the Ship Log doesn't currently have a Suit Log Mode counterpart.
 
+## Disclaimer
+Personally, for most general cases, **I do not recommend using this mod** for a first game, since I consider that the vanilla gaming experience gives a very pleasant feeling in many ways. Having to go to your ship to be able to read your progress every time, I think, is pretty special for many reasons.
+
+I suggest using Suit Log in the first playthrough of the vanilla campaign **only if you're really fed up** with having to rely on the traditional Ship Log. Think carefully before activating it.
+
 ## Suit Log Modes Developer Guide
 
 This guide assumes that you are already familiarized with the [Custom Ship Log Modes](https://outerwildsmods.com/mods/customshiplogmodes/), as developing Suit Log modes is very similar.
