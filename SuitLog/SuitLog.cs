@@ -240,11 +240,106 @@ namespace SuitLog
                    _toolModeSwapper._firstPersonManipulator._focusedRepairReceiver == null;
         }
 
+        public string suitLogName;
         private void SetupPrompts()
         {
-            // TODO: Translations
-            _openPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.OpenSuitLog), "Open Suit Log");
-            _closePrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.CloseSuitLog), "Close Suit Log");
+            // Establish these two vars
+            string openPromptString;
+            string closePromptString;
+
+            // Define them
+            switch (PlayerData.GetSavedLanguage())
+            {
+                case TextTranslation.Language.FRENCH:
+                    suitLogName = "Journal de combinaison";
+                    openPromptString = "Ouvrir le journal de combinaison";
+                    closePromptString = "Fermer le journal de combinaison";
+                    break;
+                case TextTranslation.Language.GERMAN:
+                    suitLogName = "Anzugslog";
+                    openPromptString = "Anzugslog öffnen";
+                    closePromptString = "Anzugslog schließen";
+                    break;
+                case TextTranslation.Language.ITALIAN:
+                    suitLogName = "Registro della tuta";
+                    openPromptString = "Apri il registro della tuta";
+                    closePromptString = "Chiudi il registro della tuta";
+                    break;
+                case TextTranslation.Language.JAPANESE:
+                    suitLogName = "宇宙服の航行記録";
+                    openPromptString = "宇宙服の航行記録を開く";
+                    closePromptString = "宇宙服の航行記録を閉じる";
+                    break;
+                case TextTranslation.Language.KOREAN:
+                    suitLogName = "우주복 일지";
+                    openPromptString = "우주복 일지 열기";
+                    closePromptString = "우주복 일지 닫기";
+                    break;
+                case TextTranslation.Language.POLISH:
+                    suitLogName = "Dziennik skafander";
+                    openPromptString = "Otwórz dziennik skafander";
+                    closePromptString = "Zamknij dziennik skafander";
+                    break;
+                case TextTranslation.Language.PORTUGUESE_BR:
+                    suitLogName = "Diário de Traje";
+                    openPromptString = "Abrir o Diário de Traje";
+                    closePromptString = "Fechar o Diário de Traje";
+                    break;
+                case TextTranslation.Language.RUSSIAN:
+                    suitLogName = "Бортжурнал";
+                    openPromptString = "Открыть бортжурнал";
+                    closePromptString = "Закрыть бортжурнал";
+                    break;
+                case TextTranslation.Language.CHINESE_SIMPLE:
+                    suitLogName = "太空服日志";
+                    openPromptString = "打开太空服日志";
+                    closePromptString = "关闭太空服日志";
+                    break;
+                case TextTranslation.Language.SPANISH_LA:
+                    suitLogName = "Registro del traje";
+                    openPromptString = "Abrir registro del traje";
+                    closePromptString = "Cerrar registro del traje";
+                    break;
+                case TextTranslation.Language.TURKISH:
+                    suitLogName = "Elbisesi Kayıtları";
+                    openPromptString = "Elbisesi Kayıtları Aç";
+                    closePromptString = "Yakın Elbisesi Kayıtları";
+                    break;
+                default:
+                    switch (PlayerData.GetSavedLanguage().ToString())
+                    {
+                        case "Czech":
+                            suitLogName = "Skafandr deník";
+                            openPromptString = "Otevři skafandr deník";
+                            closePromptString = "Zavři skafandr deník";
+                            break;
+                        case "Íslenska":
+                            suitLogName = "Geimbúninguraskrá";
+                            openPromptString = "Opna Geimbúninguraskrá";
+                            closePromptString = "Loka Geimbúninguraskrá";
+                            break;
+                        case "Andalûh":
+                            suitLogName = "Rehîttro der trahe";
+                            openPromptString = "Abrîh rehîttro der trahe";
+                            closePromptString = "Çerrâh rehîttro der trahe";
+                            break;
+                        case "Euskara":
+                            suitLogName = "Espazio-jantziaren erregistroa";
+                            openPromptString = "Espazio-jantziaren erregistroa ikusi";
+                            closePromptString = "Espazio-jantziaren erregistroa itxi";
+                            break;
+                        default:
+                            suitLogName = "Suit Log";
+                            openPromptString = "Open Suit Log";
+                            closePromptString = "Close Suit Log";
+                            break;
+                    }
+                    break;
+            }
+            
+            // Setup prompts
+            _openPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.OpenSuitLog), openPromptString);
+            _closePrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.CloseSuitLog), closePromptString);
             _modeSelectorPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.OpenModeSelector), ModeSelectorMode.Name);
             _modeSwapPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.SwapMode), ""); // The text is updated
             Locator.GetPromptManager().AddScreenPrompt(_openPrompt, _upperRightPromptList, TextAnchor.MiddleRight);
@@ -336,7 +431,7 @@ namespace SuitLog
                 .OrderBy(mode => mode.Item2)
                 .ToList();
 
-            modes.Insert(0, new Tuple<ShipLogMode, string>(_suitLogMode, SuitLogMode.Name)); 
+            modes.Insert(0, new Tuple<ShipLogMode, string>(_suitLogMode, SuitLogMode.Name())); 
             
             return modes;
         }
