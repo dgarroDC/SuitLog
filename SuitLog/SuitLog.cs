@@ -286,9 +286,9 @@ namespace SuitLog
                     closePromptString = "Fechar o Diário de Traje";
                     break;
                 case TextTranslation.Language.RUSSIAN:
-                    suitLogName = "Скафа́ндржурнал";
-                    openPromptString = "Открыть скафа́ндржурнал";
-                    closePromptString = "Закрыть скафа́ндржурнал";
+                    suitLogName = "Бортжурнал";
+                    openPromptString = "Открыть бортжурнал";
+                    closePromptString = "Закрыть бортжурнал";
                     break;
                 case TextTranslation.Language.CHINESE_SIMPLE:
                     suitLogName = "太空服日志";
