@@ -1,5 +1,9 @@
 {
   "SUIT_LOG" : "太空服日志",
   "OPEN_SUIT_LOG" : "打开太空服日志",
-  "CLOSE_SUIT_LOG" : "关闭太空服日志"
+  "CLOSE_SUIT_LOG" : "关闭太空服日志",
+  "CLOSE_ENTRIES" : "关闭记录",
+  "SELECT_MODE" : "选择模式",
+  "GO_BACK" : "返回{0}",
+  "SELECT" : "选择{0}"
 }

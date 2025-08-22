@@ -1,5 +1,9 @@
 {
   "SUIT_LOG" : "宇宙服の航行記録",
   "OPEN_SUIT_LOG" : "宇宙服の航行記録を開く",
-  "CLOSE_SUIT_LOG" : "宇宙服の航行記録を閉じる"
+  "CLOSE_SUIT_LOG" : "宇宙服の航行記録を閉じる",
+  "CLOSE_ENTRIES" : "Close Entries",
+  "SELECT_MODE" : "モードを選択",
+  "GO_BACK" : "{0}に戻る",
+  "SELECT" : "{0}を選択"
 }
