@@ -74,7 +74,7 @@ public class SuitLogMode : ShipLogMode
     {
         _viewEntriesPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.ViewEntries), UITextLibrary.GetString(UITextType.LogViewEntriesPrompt));
         // TODO: Close Entries is not the best text for hidden astro object
-        _closeEntriesPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.CloseEntries), "Close Entries");
+        _closeEntriesPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.CloseEntries), TranslationHandler.GetTranslation("CLOSE_ENTRIES"));
         _markOnHUDPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.MarkEntryOnHUD), ""); // This is updated
     }
 

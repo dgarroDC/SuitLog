@@ -1,5 +1,6 @@
 {
   "SUIT_LOG" : "Suit Log",
   "OPEN_SUIT_LOG" : "Open Suit Log",
-  "CLOSE_SUIT_LOG" : "Close Suit Log"
+  "CLOSE_SUIT_LOG" : "Close Suit Log",
+  "CLOSE_ENTRIES" : "Close Entries"
 }
