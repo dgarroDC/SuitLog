@@ -244,7 +244,7 @@ namespace SuitLog
         {
             _openPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.OpenSuitLog), TranslationHandler.GetTranslation("OPEN_SUIT_LOG"));
             _closePrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.CloseSuitLog), TranslationHandler.GetTranslation("CLOSE_SUIT_LOG"));
-            _modeSelectorPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.OpenModeSelector), ModeSelectorMode.Name);
+            _modeSelectorPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.OpenModeSelector), ModeSelectorMode.GetName());
             _modeSwapPrompt = new ScreenPrompt(Input.PromptCommands(Input.Action.SwapMode), ""); // The text is updated
             Locator.GetPromptManager().AddScreenPrompt(_openPrompt, _upperRightPromptList, TextAnchor.MiddleRight);
             Locator.GetPromptManager().AddScreenPrompt(_closePrompt, _upperRightPromptList, TextAnchor.MiddleRight);
