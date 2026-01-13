@@ -231,11 +231,21 @@ namespace SuitLog
 
         private bool CanSuitLogRemainOpen()
         {
+            // Check for holding custom items which might have overlap with keybindings.
+            bool holds_tool = false;
+            if (_toolModeSwapper.GetToolMode() == ToolMode.Item)
+            {
+                OWItem item = _toolModeSwapper.GetItemCarryTool().GetHeldItem();
+                // Ignore base game items.
+                holds_tool = !(item is ScrollItem || item is SharedStone || item is DreamLanternItem || item is SimpleLanternItem ||
+                    item is SlideReelItem || item is NomaiConversationStone || item is WarpCoreItem);
+            }
             return Locator.GetPlayerSuit().IsWearingHelmet() &&
                    !Locator.GetPlayerSuit().IsTrainingSuit() &&
                    !_toolModeSwapper._signalscope.IsEquipped() &&
                    !_toolModeSwapper._probeLauncher.IsEquipped() &&
                    !_toolModeSwapper._translator.IsEquipped() &&
+                   !holds_tool &&
                    // Otherwise the repair prompt will appear in suit log and conflict with view entries
                    _toolModeSwapper._firstPersonManipulator._focusedRepairReceiver == null;
         }
