@@ -96,4 +96,14 @@ public class SuitLogAPI : ISuitLogAPI
     {
         return ((SuitLogItemList)itemList).GetIndexUI(index);
     }
+
+    public void LockSuitLog(object caller)
+    {
+        SuitLog.Instance.LockSuitLog(caller);
+    }
+
+    public void UnlockSuitLog(object caller)
+    {
+        SuitLog.Instance.UnlockSuitLog(caller);
+    }
 }
