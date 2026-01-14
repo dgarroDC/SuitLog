@@ -41,6 +41,8 @@ namespace SuitLog
         internal const float OpenAnimationDuration = 0.13f;
         internal const float CloseAnimationDuration = 0.3f;
 
+        private HashSet<object> _locks = new();
+
         private void Start()
         {
             Instance = this;
@@ -246,6 +248,7 @@ namespace SuitLog
                    !_toolModeSwapper._probeLauncher.IsEquipped() &&
                    !_toolModeSwapper._translator.IsEquipped() &&
                    !holds_tool &&
+                   _locks.Count == 0 &&
                    // Otherwise the repair prompt will appear in suit log and conflict with view entries
                    _toolModeSwapper._firstPersonManipulator._focusedRepairReceiver == null;
         }
@@ -381,6 +384,16 @@ namespace SuitLog
                 // (going to Menu is also possible in preflight list but Suit Log should be closed when doing that)
                 Instance.CloseSuitLog();
             }
+        }
+
+        public void LockSuitLog(object caller)
+        {
+            _locks.Add(caller);
+        }
+
+        public void UnlockSuitLog(object caller)
+        {
+            _locks.Remove(caller);
         }
     }
 }

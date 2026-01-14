@@ -26,4 +26,14 @@ public interface ISuitLogAPI
     public void ItemListDescriptionFieldClose(MonoBehaviour itemList);
     public List<ShipLogEntryListItem> ItemListGetItemsUI(MonoBehaviour itemList);
     public int ItemListGetIndexUI(MonoBehaviour itemList, int index);
+    /// <summary>
+    /// Disables SuitLog from opening. In case there are multiple calls to LockSuitLog, it stays disabled until all callers have called UnlockedSuitLog.
+    /// </summary>
+    /// <param name="caller">A reference to calling object. Pass the same object to UnlockSuitLog.</param>
+    public void LockSuitLog(object caller);
+    /// <summary>
+    /// Tries to re-enable SuitLog. In case there were multiple calls to LockSuitLog, it stays disabled until all callers have called UnlockedSuitLog.
+    /// </summary>
+    /// <param name="caller">A reference to calling object. Pass the same object you passed to LockSuitLog.</param>
+    public void UnlockSuitLog(object caller);
 }
