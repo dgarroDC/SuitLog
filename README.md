@@ -30,7 +30,9 @@ Personally, for most general cases, **I do not recommend using this mod** for a 
 
 I suggest using Suit Log in the first playthrough of the vanilla campaign **only if you're really fed up** with having to rely on the traditional Ship Log. Think carefully before activating it.
 
-## Suit Log Modes Developer Guide
+## Developer Guide
+
+### Suit Log Modes
 
 This guide assumes that you are already familiarized with the [Custom Ship Log Modes](https://outerwildsmods.com/mods/customshiplogmodes/), as developing Suit Log modes is very similar.
 
@@ -75,3 +77,11 @@ Note that both modes use the same [`SlideReelPlayerMode`](https://github.com/dga
 In the code above, also note the call to `DescriptionFieldOpen` that it makes for the Suit Log mode case just once, like mentioned earlier. Then in both cases of the mode the description field is always open.
 
 Please don't hesitate to ask me for help if you want to port your custom Ship Log mode to the Suit Log!
+
+### Disable the Suit Log from another mod
+
+There are two methods unrelated to the custom modes in the API you could use to disable and re-enable the Suit Log: `LockSuitLog` and `UnlockSuitLog`. You pass a calling object to lock it and prevent the Suit Log, and then unlock it with the same calling object when you no longer need to disable the Suit Log. Note that multiple callers can lock the Suit Log (from multiple mods or even multiple locks from a single mod), and it would be remain disabled until all are unlocked.
+
+This is useful for example if you have a situation where you have a functionallity that acts with the same input button as the Suit Log, disabling the Suit Log solves that conflict. Also, this opens the possibilty to story modes to include the Suit Log as a tool but only unlock it until some conditions are met (for example, a character teaching it how to use it).
+
+The Suit Log already disables itself if a custom item is held by the user, so in those cases you wouldn't need to use the API to lock the Suit Log, but always test it just in case.
